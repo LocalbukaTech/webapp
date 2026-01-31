@@ -3,6 +3,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Custom Font - Hakuna */
+@font-face {
+  font-family: "Hakuna";
+  src: url("/fonts/Hakuna.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ============================================
    DESIGN SYSTEM TOKENS
    Primary: #FBBE15 (Yellow/Gold)
@@ -240,5 +249,463 @@
   /* Container Query Support */
   .container-query {
     container-type: inline-size;
+  }
+}
+
+/* ============================================
+   TIKTOK-STYLE LAYOUT COMPONENTS
+   ============================================ */
+
+/* Main Layout */
+.main-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #1a1a1a;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* ============================================
+   SIDEBAR STYLES
+   ============================================ */
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Logo */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.logo-text {
+  color: #ffffff;
+}
+
+.logo-text-accent {
+  color: #fbbe15;
+}
+
+.logo-badge {
+  font-size: 1.25rem;
+  margin-left: 0.25rem;
+  background: #fbbe15;
+  border-radius: 50%;
+  padding: 0.15rem;
+}
+
+/* Search */
+.sidebar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #71717a;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.625rem 0.75rem 0.625rem 2.5rem;
+  background-color: #2a2a2a;
+  border: none;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-size: 0.875rem;
+}
+
+.search-input::placeholder {
+  color: #71717a;
+}
+
+.search-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(251, 190, 21, 0.3);
+}
+
+/* Navigation */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 0.75rem;
+  border-radius: 0.5rem;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.nav-item-active {
+  color: #fbbe15;
+}
+
+.nav-item-active:hover {
+  background-color: transparent;
+}
+
+/* Footer */
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+}
+
+.footer-link {
+  color: #71717a;
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #a1a1aa;
+}
+
+.footer-copyright {
+  color: #52525b;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+/* ============================================
+   VIDEO FEED STYLES
+   ============================================ */
+.video-feed {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: calc(100vh - 3rem);
+  max-height: 850px;
+}
+
+.video-feed-container {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.video-feed-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #71717a;
+  font-size: 1rem;
+}
+
+.video-player-wrapper {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================
+   VIDEO PLAYER STYLES
+   ============================================ */
+.video-player {
+  position: relative;
+  width: 380px;
+  height: 100%;
+  border-radius: 1rem;
+  overflow: hidden;
+  background-color: #000000;
+  cursor: pointer;
+}
+
+.video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Top Controls */
+.video-top-controls {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.video-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.video-control-btn:hover {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================
+   VIDEO OVERLAY STYLES
+   ============================================ */
+.video-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1.5rem 1rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+  z-index: 5;
+}
+
+.video-overlay-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.video-username {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.verified-badge {
+  color: #38bdf8;
+  fill: #38bdf8;
+}
+
+.video-hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.hashtag {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8125rem;
+}
+
+/* ============================================
+   ACTION BAR STYLES
+   ============================================ */
+.action-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  align-items: center;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+.action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  transition: color 0.2s ease;
+}
+
+.action-btn:hover .action-icon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.action-btn-liked .action-icon {
+  color: #ef4444;
+}
+
+.action-btn-saved .action-icon {
+  color: #fbbe15;
+}
+
+.action-count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+/* ============================================
+   VIDEO NAVIGATION STYLES
+   ============================================ */
+.video-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-left: 1.5rem;
+  align-self: center;
+}
+
+.nav-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: transparent;
+  border: 2px solid #454545;
+  border-radius: 50%;
+  color: #a0a0a0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-arrow:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: #666666;
+  color: #ffffff;
+}
+
+.nav-arrow-disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 200px;
+    padding: 1rem;
+  }
+
+  .video-player {
+    width: 340px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-height: auto;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .sidebar-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .sidebar-nav {
+    display: none;
+  }
+
+  .sidebar-search {
+    width: 200px;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .video-feed {
+    height: calc(100vh - 80px);
+    max-height: none;
+  }
+
+  .video-player {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-search {
+    display: none;
+  }
+
+  .video-player {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .action-bar {
+    gap: 1rem;
+  }
+
+  .action-icon {
+    width: 38px;
+    height: 38px;
   }
 }
