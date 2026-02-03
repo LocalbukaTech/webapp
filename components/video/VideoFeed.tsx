@@ -6,6 +6,15 @@ import { Video } from "@/types/video";
 import { VideoPlayer } from "./VideoPlayer";
 import { ActionBar } from "./ActionBar";
 import { VideoNavigation } from "./VideoNavigation";
+import Comments from "./comments"; // default import
+
+interface Comment {
+  id: string;
+  user: string;
+  avatar: string;
+  time: string;
+  text: string;
+}
 
 interface VideoFeedProps {
   videos: Video[];
@@ -17,6 +26,35 @@ export function VideoFeed({ videos }: VideoFeedProps) {
   const [isGlobalMuted, setIsGlobalMuted] = useState(true);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // --- COMMENTS STATE ---
+  const [videoComments, setVideoComments] = useState<{ [videoId: string]: Comment[] }>(() => {
+    const initial: { [videoId: string]: Comment[] } = {};
+    videos.forEach((v) => {
+      initial[v.id] = Array.isArray(v.comments) ? (v.comments as Comment[]) : [];
+    });
+    return initial;
+  });
+
+  // --- ADD COMMENT HANDLER ---
+  const handleAddComment = (text: string) => {
+    const videoId = videos[currentIndex].id;
+    const newComment: Comment = {
+      id: Date.now().toString(),
+      user: "You",
+      time: "Just now",
+      text,
+      avatar: "",
+    };
+
+    setVideoComments((prev) => ({
+      ...prev,
+      [videoId]: [...(prev[videoId] || []), newComment],
+    }));
+  };
+
+  // --- COMMENTS DRAWER STATE ---
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+
   const handleMuteChange = useCallback((muted: boolean) => {
     setIsGlobalMuted(muted);
   }, []);
@@ -25,11 +63,7 @@ export function VideoFeed({ videos }: VideoFeedProps) {
     if (currentIndex > 0 && !isTransitioning) {
       setIsTransitioning(true);
       setCurrentIndex((prev) => prev - 1);
-      
-      // Clear any existing timeout
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
       transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 400);
     }
   }, [currentIndex, isTransitioning]);
@@ -38,25 +72,17 @@ export function VideoFeed({ videos }: VideoFeedProps) {
     if (currentIndex < videos.length - 1 && !isTransitioning) {
       setIsTransitioning(true);
       setCurrentIndex((prev) => prev + 1);
-      
-      // Clear any existing timeout
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
       transitionTimeoutRef.current = setTimeout(() => setIsTransitioning(false), 400);
     }
   }, [currentIndex, videos.length, isTransitioning]);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (transitionTimeoutRef.current) {
-        clearTimeout(transitionTimeoutRef.current);
-      }
+      if (transitionTimeoutRef.current) clearTimeout(transitionTimeoutRef.current);
     };
   }, []);
 
-  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowUp") {
@@ -67,12 +93,10 @@ export function VideoFeed({ videos }: VideoFeedProps) {
         handleNext();
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleNext, handlePrevious]);
 
-  // Ensure we have videos
   if (!videos || videos.length === 0) {
     return (
       <div className="video-feed-empty">
@@ -83,17 +107,10 @@ export function VideoFeed({ videos }: VideoFeedProps) {
 
   const currentVideo = videos[currentIndex];
 
-  // Fade animation variants (no position change, just opacity)
   const fadeVariants = {
-    enter: {
-      opacity: 0,
-    },
-    center: {
-      opacity: 1,
-    },
-    exit: {
-      opacity: 0,
-    },
+    enter: { opacity: 0 },
+    center: { opacity: 1 },
+    exit: { opacity: 0 },
   };
 
   return (
@@ -106,10 +123,7 @@ export function VideoFeed({ videos }: VideoFeedProps) {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{
-              duration: 0.3,
-              ease: "easeInOut",
-            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
             className="video-player-wrapper"
           >
             <VideoPlayer
@@ -122,13 +136,24 @@ export function VideoFeed({ videos }: VideoFeedProps) {
             />
           </motion.div>
         </AnimatePresence>
+
         <ActionBar
           likes={currentVideo.likes}
-          comments={currentVideo.comments}
+          comments={videoComments[currentVideo.id]?.length || 0}
           saves={currentVideo.saves}
           shares={currentVideo.shares}
+          onCommentClick={() => setIsCommentsOpen(true)} // opens drawer
+        />
+
+        {/* --- COMMENTS DRAWER --- */}
+        <Comments
+          comments={videoComments[currentVideo.id] || []}
+          onSend={handleAddComment}
+          open={isCommentsOpen} // controlled by ActionBar button
+          onClose={() => setIsCommentsOpen(false)} // closes drawer
         />
       </div>
+
       <VideoNavigation
         onPrevious={handlePrevious}
         onNext={handleNext}
