@@ -9,9 +9,10 @@ interface ActionBarProps {
   comments: number;
   saves: number;
   shares: number;
+  onCommentClick?: () => void; // added prop
 }
 
-export function ActionBar({ likes, comments, saves, shares }: ActionBarProps) {
+export function ActionBar({ likes, comments, saves, shares, onCommentClick }: ActionBarProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -29,7 +30,7 @@ export function ActionBar({ likes, comments, saves, shares }: ActionBarProps) {
       count: comments,
       label: "Comment",
       isActive: false,
-      onClick: () => {},
+      onClick: onCommentClick, // <-- call the handler passed from VideoFeed
       activeClass: "",
     },
     {
