@@ -11,22 +11,39 @@ export default function CommentInput({ onSend }: CommentInputProps) {
 
   const handleSend = () => {
     if (!text.trim()) return
-    onSend?.(text)
+    onSend?.(text.trim())
     setText("")
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  const isDisabled = !text.trim()
+
   return (
     <div className="p-3 border-t border-[#3b3b3b] bg-[#2c2c2c] flex items-center justify-center">
-
-      {/* Rounded input wrapper */}
-      <div className="w-full flex items-center bg-[#1a1a1a] rounded-xl px-4 py-2">
-
-        {/* Input field styled to match screenshot font */}
+      <div
+        className="
+          w-full flex items-center 
+          bg-[#1a1a1a] 
+          rounded-xl 
+          px-4 py-2
+          transition
+          focus-within:ring-1
+          focus-within:ring-[#FFC727]/60
+        "
+      >
         <input
           type="text"
-          placeholder="Lovely pla"
+          placeholder="Add comment"
           value={text}
+          autoFocus
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="
             flex-1 bg-transparent 
             text-white 
@@ -39,28 +56,29 @@ export default function CommentInput({ onSend }: CommentInputProps) {
           "
         />
 
-        {/* Yellow send button — same as screenshot */}
         <Button
-        size="icon"
-        onClick={handleSend}
-        className="
-        rounded-full 
-        bg-[#FFC727] 
-        hover:bg-[#FFB800] 
-        w-8 h-8 
-        flex items-center justify-center 
-        shadow-sm
-        "
->
-  <ArrowUp 
-    size={16}        // ⬅️ Perfect size for the yellow circle
-    strokeWidth={2.4} // ⬅️ Matches thin clean screenshot stroke
-    className="text-black"
-  />
-</Button>
-
-
-
+          size="icon"
+          onClick={handleSend}
+          disabled={isDisabled}
+          className="
+            rounded-full 
+            bg-[#FFC727] 
+            hover:bg-[#FFB800] 
+            w-8 h-8 
+            flex items-center justify-center 
+            shadow-sm
+            transition
+            active:scale-95
+            disabled:opacity-50
+            disabled:cursor-not-allowed
+          "
+        >
+          <ArrowUp
+            size={16}
+            strokeWidth={2.4}
+            className="text-black"
+          />
+        </Button>
       </div>
     </div>
   )
