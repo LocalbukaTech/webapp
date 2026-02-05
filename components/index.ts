@@ -1,10 +1,10 @@
 // Layout Components
-export { Sidebar } from "./layout/Sidebar";
-export { MainLayout } from "./layout/MainLayout";
+export { Sidebar } from "@/components/layout/Sidebar";
+export { MainLayout } from "@/components/layout/MainLayout";
 
 // Video Components
-export { VideoPlayer } from "./video/VideoPlayer";
-export { VideoOverlay } from "./video/VideoOverlay";
-export { ActionBar } from "./video/ActionBar";
-export { VideoNavigation } from "./video/VideoNavigation";
-export { VideoFeed } from "./video/VideoFeed";
+export { VideoPlayer } from "@/components/video/VideoPlayer";
+export { VideoOverlay } from "@/components/video/VideoOverlay";
+export { ActionBar } from "@/components/video/ActionBar";
+export { VideoNavigation } from "@/components/video/VideoNavigation";
+export { VideoFeed } from "@/components/video/VideoFeed";

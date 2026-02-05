@@ -3,10 +3,10 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Video } from "@/types/video";
-import { VideoPlayer } from "./VideoPlayer";
-import { ActionBar } from "./ActionBar";
-import { VideoNavigation } from "./VideoNavigation";
-import Comments from "./comments"; // default import
+import { VideoPlayer } from "@/components/video/VideoPlayer";
+import { ActionBar } from "@/components/video/ActionBar";
+import { VideoNavigation } from "@/components/video/VideoNavigation";
+import Comments from "@/components/video/comments"; // default import
 
 interface Comment {
   id: string;
@@ -99,7 +99,7 @@ export function VideoFeed({ videos }: VideoFeedProps) {
 
   if (!videos || videos.length === 0) {
     return (
-      <div className="video-feed-empty">
+      <div className="flex items-center justify-center h-full text-zinc-500 text-base">
         <p>No videos available</p>
       </div>
     );
@@ -114,8 +114,8 @@ export function VideoFeed({ videos }: VideoFeedProps) {
   };
 
   return (
-    <div className="video-feed">
-      <div className="video-feed-container">
+    <div className="flex items-center gap-4 h-[calc(100vh-3rem)] max-h-[850px]">
+      <div className="flex gap-3 items-end h-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentVideo.id}
@@ -124,7 +124,7 @@ export function VideoFeed({ videos }: VideoFeedProps) {
             animate="center"
             exit="exit"
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="video-player-wrapper"
+            className="h-full flex items-center"
           >
             <VideoPlayer
               video={currentVideo}

@@ -3,13 +3,14 @@
 import { Heart, MessageCircle, Bookmark, Share2 } from "lucide-react";
 import { formatCount } from "@/constants/mockVideos";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface ActionBarProps {
   likes: number;
   comments: number;
   saves: number;
   shares: number;
-  onCommentClick?: () => void; // added prop
+  onCommentClick?: () => void;
 }
 
 export function ActionBar({ likes, comments, saves, shares, onCommentClick }: ActionBarProps) {
@@ -23,14 +24,14 @@ export function ActionBar({ likes, comments, saves, shares, onCommentClick }: Ac
       label: "Like",
       isActive: isLiked,
       onClick: () => setIsLiked(!isLiked),
-      activeClass: "action-btn-liked",
+      activeClass: "text-red-500",
     },
     {
       icon: MessageCircle,
       count: comments,
       label: "Comment",
       isActive: false,
-      onClick: onCommentClick, // <-- call the handler passed from VideoFeed
+      onClick: onCommentClick,
       activeClass: "",
     },
     {
@@ -39,7 +40,7 @@ export function ActionBar({ likes, comments, saves, shares, onCommentClick }: Ac
       label: "Save",
       isActive: isSaved,
       onClick: () => setIsSaved(!isSaved),
-      activeClass: "action-btn-saved",
+      activeClass: "text-[#fbbe15]",
     },
     {
       icon: Share2,
@@ -52,21 +53,24 @@ export function ActionBar({ likes, comments, saves, shares, onCommentClick }: Ac
   ];
 
   return (
-    <div className="action-bar">
+    <div className="flex flex-col gap-4 pb-4 items-center">
       {actions.map((action) => (
         <button
           key={action.label}
-          className={`action-btn ${action.isActive ? action.activeClass : ""}`}
+          className={cn(
+            "flex flex-col items-center gap-1.5 bg-transparent border-none text-white cursor-pointer transition-transform duration-200 hover:scale-110 active:scale-95",
+            action.isActive ? action.activeClass : ""
+          )}
           onClick={action.onClick}
           aria-label={action.label}
         >
-          <div className="action-icon">
+          <div className="flex items-center justify-center w-9 h-9">
             <action.icon
               size={24}
               fill={action.isActive ? "currentColor" : "none"}
             />
           </div>
-          <span className="action-count">{formatCount(action.count)}</span>
+          <span className="text-xs font-medium text-white">{formatCount(action.count)}</span>
         </button>
       ))}
     </div>
