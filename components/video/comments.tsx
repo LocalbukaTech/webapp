@@ -6,8 +6,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import CommentItem from "./commentItem";
-import CommentInput from "./commentInput";
+import CommentItem from "@/components/video/commentItem";
+import CommentInput from "@/components/video/commentInput";
 
 export interface Comment {
   id: string;

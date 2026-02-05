@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Volume2, VolumeX, MoreHorizontal } from "lucide-react";
 import { Video } from "@/types/video";
-import { VideoOverlay } from "./VideoOverlay";
+import { VideoOverlay } from "@/components/video/VideoOverlay";
 
 interface VideoPlayerProps {
   video: Video;
@@ -134,7 +134,7 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
   return (
     <div
       ref={containerRef}
-      className="video-player"
+      className="relative w-[380px] h-full bg-black rounded-2xl overflow-hidden cursor-pointer"
       onClick={togglePlay}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -144,7 +144,7 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
       <video
         ref={videoRef}
         src={video.src}
-        className="video-element"
+        className="w-full h-full object-cover"
         loop
         muted={isMuted}
         playsInline
@@ -152,16 +152,16 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
       />
 
       {/* Top Controls */}
-      <div className="video-top-controls">
+      <div className="absolute top-3 left-3 right-3 flex justify-between items-center z-10">
         <button
-          className="video-control-btn"
+          className="flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none"
           onClick={toggleMute}
           aria-label={isMuted ? "Unmute" : "Mute"}
         >
           {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
         <button
-          className="video-control-btn"
+          className="flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none"
           onClick={(e) => e.stopPropagation()}
           aria-label="More options"
         >

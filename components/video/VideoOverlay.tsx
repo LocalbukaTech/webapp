@@ -10,17 +10,17 @@ interface VideoOverlayProps {
 
 export function VideoOverlay({ username, isVerified, hashtags }: VideoOverlayProps) {
   return (
-    <div className="video-overlay">
-      <div className="video-overlay-content">
-        <div className="video-username">
+    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/70 to-transparent z-[5]">
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center gap-1.5 text-white font-semibold text-[15px]">
           <span>{username}</span>
           {isVerified && (
-            <BadgeCheck className="verified-badge" size={16} />
+            <BadgeCheck className="text-sky-400 fill-sky-400" size={16} />
           )}
         </div>
-        <div className="video-hashtags">
+        <div className="flex flex-wrap gap-1">
           {hashtags.map((tag) => (
-            <span key={tag} className="hashtag">
+            <span key={tag} className="text-white/80 text-[13px]">
               #{tag}
             </span>
           ))}
