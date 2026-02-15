@@ -12,6 +12,7 @@ import {
   Users,
   User,
   Search,
+  Menu,
 } from "lucide-react";
 import Image from "next/image";
 import { SearchOverlay } from "@/components/layout/SearchOverlay";
@@ -25,6 +26,14 @@ const navItems = [
   { icon: Bell, label: "Notification", href: "/notifications" },
   { icon: Bookmark, label: "Saved", href: "/saved" },
   { icon: Users, label: "Community", href: "/community" },
+  { icon: User, label: "Profile", href: "/profile" },
+];
+
+const mobileNavItems = [
+  { icon: Home, label: "Home", href: "/" },
+  { icon: UtensilsCrossed, label: "Buka", href: "/buka" },
+  { icon: PlusCircle, label: "Upload", href: "/upload" },
+  { icon: Bell, label: "Inbox", href: "/notifications" },
   { icon: User, label: "Profile", href: "/profile" },
 ];
 
@@ -45,7 +54,7 @@ export function Sidebar() {
     if (label === "Search") {
       setIsSearchOpen(true);
       setIsNotificationOpen(false);
-    } else if (label === "Notification") {
+    } else if (label === "Notification" || label === "Inbox") {
       setIsNotificationOpen(true);
       setIsSearchOpen(false);
     } else {
@@ -56,9 +65,10 @@ export function Sidebar() {
 
   return (
     <>
+      {/* ── Desktop Sidebar ── */}
       <aside 
         className={cn(
-          "flex flex-col justify-between p-6 min-h-screen border-r border-white/5 bg-[#1a1a1a] transition-[width] duration-300 z-200",
+          "hidden md:flex flex-col justify-between p-6 min-h-screen border-r border-white/5 bg-[#1a1a1a] transition-[width] duration-300 z-50 sticky top-0 h-screen",
           isCollapsed ? "w-[80px] px-3 items-center" : "w-[240px]"
         )}
       >
@@ -182,6 +192,83 @@ export function Sidebar() {
           </footer>
         )}
       </aside>
+
+      {/* ── Mobile Top Header ── */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#1a1a1a] border-b border-white/5 flex items-center justify-between px-4 z-50">
+        <div className="w-8" /> {/* Spacer */}
+        <div className="flex items-center gap-2">
+           <span className="text-xl text-white font-normal" style={{ fontFamily: 'var(--font-hakuna), sans-serif' }}>
+              LocalBuka
+           </span>
+           <Image
+              src='/images/localBuka_logo.png'
+              alt='LocalBuka'
+              width={24}
+              height={24}
+              className='h-6 w-6 rounded-full'
+           />
+        </div>
+        <button onClick={() => handleNavClick("Search")} className="w-8 flex justify-end text-white">
+          <Search size={22} />
+        </button>
+      </div>
+
+      {/* ── Mobile Bottom Nav ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#1a1a1a] border-t border-white/5 flex items-center justify-around z-50 pb-safe">
+        {mobileNavItems.map((item) => {
+          const isActive = item.href === "/" 
+            ? pathname === "/" 
+            : pathname?.startsWith(item.href);
+          
+          const isNotificationItem = item.label === "Inbox";
+          const activeState = isNotificationItem && isNotificationOpen 
+            ? true 
+            : isActive && !isNotificationOpen;
+
+          if (item.label === "Upload") {
+             return (
+              <Link 
+                key={item.label} 
+                href={item.href}
+                className="flex flex-col items-center gap-1"
+              >
+                 <PlusCircle size={32} className="fill-[#fbbe15] text-[#1a1a1a]" />
+              </Link>
+             )
+          }
+
+          if (isNotificationItem) {
+             return (
+              <button
+                key={item.label}
+                onClick={() => handleNavClick("Notification")}
+                className={cn(
+                  "flex flex-col items-center gap-1 w-12",
+                  activeState ? "text-white" : "text-zinc-500"
+                )}
+              >
+                <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </button>
+             )
+          }
+
+          return (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center gap-1 w-12",
+                activeState ? "text-white" : "text-zinc-500"
+              )}
+              onClick={() => handleNavClick(item.label)}
+            >
+              <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
 
       {/* Overlays */}
       <SearchOverlay 
