@@ -1,0 +1,198 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  Home,
+  UtensilsCrossed,
+  PlusCircle,
+  Bell,
+  Bookmark,
+  Users,
+  User,
+  Search,
+} from "lucide-react";
+import Image from "next/image";
+import { SearchOverlay } from "@/components/layout/SearchOverlay";
+import { NotificationOverlay } from "@/components/layout/NotificationOverlay";
+import { cn } from "@/lib/utils";
+
+const navItems = [
+  { icon: Home, label: "Home", href: "/" },
+  { icon: UtensilsCrossed, label: "Buka", href: "/buka" },
+  { icon: PlusCircle, label: "Upload", href: "/upload" },
+  { icon: Bell, label: "Notification", href: "/notifications" },
+  { icon: Bookmark, label: "Saved", href: "/saved" },
+  { icon: Users, label: "Community", href: "/community" },
+  { icon: User, label: "Profile", href: "/profile" },
+];
+
+const footerLinks = [
+  { label: "Company", href: "https://localbuka.com/" },
+  { label: "Program", href: "/program" },
+  { label: "Terms & Policies", href: "/terms" },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  const isCollapsed = isSearchOpen || isNotificationOpen;
+
+  const handleNavClick = (label: string) => {
+    if (label === "Search") {
+      setIsSearchOpen(true);
+      setIsNotificationOpen(false);
+    } else if (label === "Notification") {
+      setIsNotificationOpen(true);
+      setIsSearchOpen(false);
+    } else {
+      setIsSearchOpen(false);
+      setIsNotificationOpen(false);
+    }
+  };
+
+  return (
+    <>
+      <aside 
+        className={cn(
+          "flex flex-col justify-between p-6 min-h-screen border-r border-white/5 bg-[#1a1a1a] transition-[width] duration-300 z-200",
+          isCollapsed ? "w-[80px] px-3 items-center" : "w-[240px]"
+        )}
+      >
+        <div className={cn("flex flex-col gap-6", isCollapsed ? "w-full items-center" : "")}>
+          {/* Logo */}
+          <Link 
+            href='/' 
+            className={cn(
+              "flex items-center gap-1 py-2 text-2xl font-bold italic",
+              isCollapsed ? "justify-center" : ""
+            )}
+          >
+            {!isCollapsed && (
+              <span 
+                className='text-xl md:text-2xl text-white font-normal'
+                style={{ fontFamily: 'var(--font-hakuna), sans-serif' }}
+              >
+                LocalBuka
+              </span>
+            )}
+            <Image
+              src='/images/localBuka_logo.png'
+              alt='LocalBuka'
+              width={40}
+              height={40}
+              className='h-8 w-8 rounded-full'
+              priority
+            />
+          </Link>
+
+          {/* Search */}
+          <div 
+            className={cn(
+              "relative flex items-center cursor-pointer bg-[#2a2a2a] rounded-lg transition-all",
+              isCollapsed ? "w-10 h-10 justify-center mx-auto" : "w-full"
+            )}
+            onClick={() => handleNavClick("Search")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                handleNavClick("Search");
+              }
+            }}
+          >
+            {isCollapsed ? (
+              // Search icon for collapsed state
+              <div 
+                className="w-[18px] h-[18px]"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E")`,
+                  backgroundSize: 'cover'
+                }}
+              />
+            ) : (
+              // Full search input for expanded state
+              <>
+                <Search className="absolute left-3 text-zinc-400" size={18} />
+                <span className="w-full py-2.5 px-3 pl-10 text-sm text-zinc-400 rounded-lg">Search</span>
+              </>
+            )}
+          </div>
+
+          {/* Navigation */}
+          <nav className={cn("flex flex-col gap-1 mt-4", isCollapsed ? "w-full" : "")}>
+            {navItems.map((item) => {
+              const isActive = item.href === "/" 
+                ? pathname === "/" 
+                : pathname?.startsWith(item.href);
+              
+              const isNotificationItem = item.label === "Notification";
+              
+              // If notification overlay is open, highlight the notification item
+              const activeState = isNotificationItem && isNotificationOpen 
+                ? true 
+                : isActive && !isNotificationOpen; // Only show other active states if notification is NOT open
+
+              return (
+                <div key={item.label}>
+                  {isNotificationItem ? (
+                    <button
+                      onClick={() => handleNavClick("Notification")}
+                      className={cn(
+                        "w-full flex items-center gap-3.5 p-3 rounded-lg text-[15px] font-medium transition-colors cursor-pointer border-none bg-transparent",
+                        activeState ? "text-[#fbbe15]" : "text-white hover:bg-white/5",
+                        isCollapsed ? "justify-center py-3" : ""
+                      )}
+                    >
+                      <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                      {!isCollapsed && <span>{item.label}</span>}
+                    </button>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3.5 p-3 rounded-lg text-[15px] font-medium transition-colors",
+                        activeState ? "text-[#fbbe15]" : "text-white hover:bg-white/5",
+                        isCollapsed ? "justify-center py-3" : ""
+                      )}
+                      onClick={() => handleNavClick(item.label)}
+                    >
+                      <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                      {!isCollapsed && <span>{item.label}</span>}
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Footer */}
+        {!isCollapsed && (
+          <footer className="flex flex-col gap-2 pt-4">
+            {footerLinks.map((link) => (
+              <Link key={link.label} href={link.href} className="text-[13px] text-zinc-400 hover:text-zinc-300 transition-colors">
+                {link.label}
+              </Link>
+            ))}
+            <span className="text-xs text-zinc-600 mt-1">© 2025 Localbuka</span>
+          </footer>
+        )}
+      </aside>
+
+      {/* Overlays */}
+      <SearchOverlay 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
+      
+      <NotificationOverlay 
+        isOpen={isNotificationOpen} 
+        onClose={() => setIsNotificationOpen(false)} 
+      />
+    </>
+  );
+}
