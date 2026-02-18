@@ -9,7 +9,14 @@ export { ActionBar } from "@/components/video/ActionBar";
 export { VideoNavigation } from "@/components/video/VideoNavigation";
 export { VideoFeed } from "@/components/video/VideoFeed";
 
-// Carousel Components
-export { Carousel } from "@/components/ui/Carousel";
-export { CarouselSlide } from "@/components/ui/CarouselSlide";
-export { CarouselIndicators } from "@/components/ui/CarouselIndicators";
+// Profile Components
+export { ProfileHeader } from "@/components/profile/ProfileHeader";
+export { ProfileTabs } from "@/components/profile/ProfileTabs";
+export { ProfileVideoGrid } from "@/components/profile/ProfileVideoGrid";
+
+// Settings Components
+export { SettingsSidebar } from "@/components/settings/SettingsSidebar";
+export { AccountInformation } from "@/components/settings/AccountInformation";
+export { NotificationsPrivacy } from "@/components/settings/NotificationsPrivacy";
+export { RewardsSupport } from "@/components/settings/RewardsSupport";
+

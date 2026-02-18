@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
-import { Volume2, VolumeX, MoreHorizontal } from "lucide-react";
+import { useRef, useState, useEffect, useCallback } from "react";
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause } from "lucide-react";
 import { Video } from "@/types/video";
 import { VideoOverlay } from "@/components/video/VideoOverlay";
 
@@ -22,6 +22,11 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
   const touchEndY = useRef<number | null>(null);
   const isScrolling = useRef(false);
 
+  // Play/pause icon overlay state
+  const [showPlayPauseIcon, setShowPlayPauseIcon] = useState(false);
+  const [lastAction, setLastAction] = useState<"play" | "pause">("pause");
+  const iconTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Play/pause based on active state and video changes
   useEffect(() => {
     if (videoRef.current) {
@@ -40,6 +45,21 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
     }
   }, [isActive, video.id]);
 
+  const showIcon = useCallback((action: "play" | "pause") => {
+    setLastAction(action);
+    setShowPlayPauseIcon(true);
+    if (iconTimeoutRef.current) clearTimeout(iconTimeoutRef.current);
+    iconTimeoutRef.current = setTimeout(() => {
+      setShowPlayPauseIcon(false);
+    }, 800);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (iconTimeoutRef.current) clearTimeout(iconTimeoutRef.current);
+    };
+  }, []);
+
   const togglePlay = () => {
     // Don't toggle play if we were swiping
     if (isScrolling.current) {
@@ -50,8 +70,10 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        showIcon("pause");
       } else {
         videoRef.current.play();
+        showIcon("play");
       }
       setIsPlaying(!isPlaying);
     }
@@ -151,6 +173,33 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
         preload="auto"
       />
 
+      {/* TikTok-style Play/Pause Icon Overlay */}
+      {showPlayPauseIcon && (
+        <div
+          className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+          style={{
+            animation: "playPauseFade 0.8s ease-out forwards",
+          }}
+        >
+          <div className="w-20 h-20 rounded-full bg-black/50 flex items-center justify-center backdrop-blur-sm">
+            {lastAction === "pause" ? (
+              <Pause size={40} className="text-white" fill="white" />
+            ) : (
+              <Play size={40} className="text-white ml-1" fill="white" />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Paused state — persistent subtle icon */}
+      {!isPlaying && !showPlayPauseIcon && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="w-20 h-20 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm opacity-70">
+            <Play size={40} className="text-white ml-1" fill="white" />
+          </div>
+        </div>
+      )}
+
       {/* Top Controls */}
       <div className="absolute top-3 left-3 right-3 flex justify-between items-center z-10">
         <button
@@ -178,3 +227,4 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
     </div>
   );
 }
+
