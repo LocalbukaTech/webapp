@@ -4,7 +4,6 @@ import {useState} from 'react';
 import Image from 'next/image';
 import {Loader2, Check} from 'lucide-react';
 import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
 import {Images} from '@/public/images';
 import {useCreateWaitlistMutation} from '@/lib/api/services/waitlist.hooks';
 import {useToast} from '@/hooks/use-toast';
@@ -112,51 +111,51 @@ export function Waitlist() {
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Input
+                <div className="w-full">
+                  <input
                     type="text"
                     name="firstName"
                     placeholder="First Name"
                     value={formData.firstName}
                     onChange={handleChange}
                     required
-                    className="h-12 px-4 outline-none text-black"
+                    className="w-full h-12 px-4 outline-none text-black border border-gray-300 rounded-lg"
                   />
                 </div>
 
-                <div>
-                  <Input
+                <div className="w-full">
+                  <input
                     type="text"
                     name="lastName"
                     placeholder="Last Name"
                     value={formData.lastName}
                     onChange={handleChange}
                     required
-                    className="h-12 px-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-black"
+                    className="w-full h-12 px-4 outline-none text-black border border-gray-300 rounded-lg"
                   />
                 </div>
 
-                <div>
-                  <Input
+                <div className="w-full">
+                  <input
                     type="tel"
                     name="phoneNumber"
                     placeholder="Phone Number"
                     value={formData.phoneNumber}
                     onChange={handleChange}
                     required
-                    className="h-12 px-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-black"
+                    className="w-full h-12 px-4 outline-none text-black border border-gray-300 rounded-lg"
                   />
                 </div>
 
-                <div>
-                  <Input
+                <div className="w-full">
+                  <input
                     type="text"
                     name="location"
                     placeholder="Location"
                     value={formData.location}
                     onChange={handleChange}
                     required
-                    className="h-12 px-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-black"
+                    className="w-full h-12 px-4 outline-none text-black border border-gray-300 rounded-lg"
                   />
                 </div>
 
@@ -169,7 +168,7 @@ export function Waitlist() {
                       <Loader2 className="w-6 h-6 animate-spin mr-2" />
                       Joining...
                     </>
-                  ) : isSuccess ? (
+                  ) : isSuccess ? ( 
                     <>
                       <Check className="w-5 h-5 mr-2" />
                       Joined

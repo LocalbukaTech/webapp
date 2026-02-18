@@ -18,12 +18,14 @@ interface Comment {
 
 interface VideoFeedProps {
   videos: Video[];
+  initialIndex?: number;
+  initialMuted?: boolean;
 }
 
-export function VideoFeed({ videos }: VideoFeedProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export function VideoFeed({ videos, initialIndex = 0, initialMuted = true }: VideoFeedProps) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isGlobalMuted, setIsGlobalMuted] = useState(true);
+  const [isGlobalMuted, setIsGlobalMuted] = useState(initialMuted);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- COMMENTS STATE ---

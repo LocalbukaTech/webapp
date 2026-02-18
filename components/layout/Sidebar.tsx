@@ -24,7 +24,7 @@ const navItems = [
   { icon: UtensilsCrossed, label: "Buka", href: "/buka" },
   { icon: PlusCircle, label: "Upload", href: "/upload" },
   { icon: Bell, label: "Notification", href: "/notifications" },
-  { icon: Bookmark, label: "Saved", href: "/saved" },
+  { icon: Bookmark, label: "Saved", href: "/profile?tab=saved" },
   { icon: Users, label: "Community", href: "/community" },
   { icon: User, label: "Profile", href: "/profile" },
 ];
@@ -40,7 +40,7 @@ const mobileNavItems = [
 const footerLinks = [
   { label: "Company", href: "https://localbuka.com/" },
   { label: "Program", href: "/program" },
-  { label: "Terms & Policies", href: "/terms" },
+  { label: "Terms & Policies", href: "https://localbuka.com/privacy/" },
 ];
 
 export function Sidebar() {
