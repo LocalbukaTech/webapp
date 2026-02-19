@@ -1,20 +1,44 @@
 /* eslint-disable @next/next/no-img-element */
+import { useRouter } from "next/navigation";
 import { SocialUser } from "./types";
 
 interface Props {
   user: SocialUser;
+  // activeTab?: "following" | "followers" | "suggested";
+  onToggleFollow: (userId: string) => void;
 }
 
-export default function UserRow({ user }: Props) {
-  // Logic: "Follow" or "Follow back" gets the yellow background
-  const isYellow = user.actionLabel === "Follow" || user.actionLabel === "Follow back";
+export default function UserRow({ user, onToggleFollow }: Props) {
+  const label = user.actionLabel;
 
+  // Button styling based on action state (TikTok/Instagram style)
+  // "Follow" and "Follow back" = prominent yellow CTA
+  // "Unfollow" = subdued outline style (like Instagram's gray "Following" button)
+  const getButtonStyle = () => {
+    switch (label) {
+      case "Follow":
+      case "Follow back":
+        return "bg-[#FFC107] text-black hover:bg-[#e6ad00]";
+      case "Unfollow":
+        return "bg-transparent text-[#A1A1AA] border border-[#333] ";
+      default:
+        return "bg-white text-black";
+    }
+  };
+
+  // Display text — show "Following" instead of "Unfollow" by default (Instagram style)
+  // On hover it will switch to "Unfollow" via CSS group-hover
+  const getDisplayText = () => {
+    if (label === "Unfollow") return "Following";
+    return label;
+  };
+const router = useRouter();
   return (
     <div className="flex items-center justify-between py-3 px-2 rounded-lg transition-colors hover:bg-white/5">
       
       {/* User Info */}
-      <div className="flex items-center gap-3">
-        <div className="relative w-10 h-10 flex-shrink-0">
+      <div className="flex items-center gap-3" onClick={() => {router.push('/other-profile')}}>
+        <div className="relative w-10 h-10 shrink-0">
           <img
             src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff`}
             className="w-full h-full rounded-full object-cover border border-gray-800"
@@ -39,13 +63,11 @@ export default function UserRow({ user }: Props) {
 
       {/* Action Button */}
       <button
+        onClick={() => onToggleFollow(user.id)}
         className={`min-w-[95px] px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight transition-all active:scale-95
-          ${isYellow 
-            ? "bg-[#FFC107] text-black" 
-            : "bg-white text-black"
-          }`}
+          ${getButtonStyle()}`}
       >
-        {user.actionLabel}
+        {label === "Unfollow" ? "Unfollow" : getDisplayText()}
       </button>
     </div>
   );
