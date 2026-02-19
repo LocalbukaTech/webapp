@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Nunito_Sans, JetBrains_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Providers } from "@/components/providers";
 
 const nunitoSans = Nunito_Sans({
   variable: "--font-nunito-sans",
@@ -36,7 +37,9 @@ export default function RootLayout({
         className={`${nunitoSans.variable} ${jetbrainsMono.variable} ${hakuna.variable} font-sans antialiased`}
         style={{ backgroundColor: "#1a1a1a" }}
       >
-        {children}
+         <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

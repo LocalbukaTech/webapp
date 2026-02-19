@@ -18,12 +18,14 @@ interface Comment {
 
 interface VideoFeedProps {
   videos: Video[];
+  initialIndex?: number;
+  initialMuted?: boolean;
 }
 
-export function VideoFeed({ videos }: VideoFeedProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export function VideoFeed({ videos, initialIndex = 0, initialMuted = true }: VideoFeedProps) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isGlobalMuted, setIsGlobalMuted] = useState(true);
+  const [isGlobalMuted, setIsGlobalMuted] = useState(initialMuted);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // --- COMMENTS STATE ---
@@ -114,8 +116,8 @@ export function VideoFeed({ videos }: VideoFeedProps) {
   };
 
   return (
-    <div className="flex items-center gap-4 h-[calc(100vh-3rem)] max-h-[850px]">
-      <div className="flex gap-3 items-end h-full">
+    <div className="flex items-center justify-center w-full h-full md:gap-4 md:h-[calc(100vh-3rem)] md:max-h-[850px]">
+      <div className="flex gap-3 items-end h-full w-full md:w-auto relative">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentVideo.id}
@@ -124,7 +126,7 @@ export function VideoFeed({ videos }: VideoFeedProps) {
             animate="center"
             exit="exit"
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="h-full flex items-center"
+            className="h-full w-full flex items-center justify-center md:rounded-2xl overflow-hidden bg-black"
           >
             <VideoPlayer
               video={currentVideo}
@@ -137,13 +139,15 @@ export function VideoFeed({ videos }: VideoFeedProps) {
           </motion.div>
         </AnimatePresence>
 
-        <ActionBar
-          likes={currentVideo.likes}
-          comments={videoComments[currentVideo.id]?.length || 0}
-          saves={currentVideo.saves}
-          shares={currentVideo.shares}
-          onCommentClick={() => setIsCommentsOpen(true)} // opens drawer
-        />
+        <div className="absolute right-2 bottom-20 md:static md:right-auto md:bottom-auto z-10">
+          <ActionBar
+            likes={currentVideo.likes}
+            comments={videoComments[currentVideo.id]?.length || 0}
+            saves={currentVideo.saves}
+            shares={currentVideo.shares}
+            onCommentClick={() => setIsCommentsOpen(true)} // opens drawer
+          />
+        </div>
 
         {/* --- COMMENTS DRAWER --- */}
         <Comments
@@ -154,12 +158,14 @@ export function VideoFeed({ videos }: VideoFeedProps) {
         />
       </div>
 
-      <VideoNavigation
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        canGoPrevious={currentIndex > 0}
-        canGoNext={currentIndex < videos.length - 1}
-      />
+      <div className="hidden md:block">
+        <VideoNavigation
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          canGoPrevious={currentIndex > 0}
+          canGoNext={currentIndex < videos.length - 1}
+        />
+      </div>
     </div>
   );
 }
