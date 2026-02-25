@@ -20,3 +20,10 @@ export { AccountInformation } from "@/components/settings/AccountInformation";
 export { NotificationsPrivacy } from "@/components/settings/NotificationsPrivacy";
 export { RewardsSupport } from "@/components/settings/RewardsSupport";
 
+// Admin Components
+export { AdminLayout } from "@/components/admin/AdminLayout";
+export { AdminSidebar } from "@/components/admin/AdminSidebar";
+export { AdminHeader } from "@/components/admin/AdminHeader";
+export { UserManagementPage } from "@/components/admin/user-management/UserManagementPage";
+
+
