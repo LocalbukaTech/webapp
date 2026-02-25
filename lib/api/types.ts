@@ -54,6 +54,14 @@ export const queryKeys = {
     comments: (blogId: string) => [...queryKeys.blog.all, 'comments', blogId] as const,
   },
 
+  // Users (Admin)
+  users: {
+    all: ['users'] as const,
+    list: (filters?: Record<string, any>) =>
+      [...queryKeys.users.all, 'list', filters] as const,
+    detail: (id: string) => [...queryKeys.users.all, 'detail', id] as const,
+  },
+
   // Simple string keys for common queries
   blogs: 'blogs',
 
