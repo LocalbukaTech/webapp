@@ -14,8 +14,19 @@ import {
   UtensilsCrossed,
   MoreVertical,
   ChevronRight,
+  Route
 } from "lucide-react";
 import { BukaCard, BukaRestaurant } from "@/components/buka/BukaCard";
+import dynamic from "next/dynamic";
+
+const MapEmbed = dynamic(() => import("@/components/buka/MapEmbed").then(mod => mod.MapEmbed), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+      Loading Map...
+    </div>
+  ),
+});
 
 /* ────────────────────── Mock Data ────────────────────── */
 
@@ -179,6 +190,7 @@ export default function RestaurantDetailPage() {
   const [activeTab, setActiveTab] = useState<"photos" | "reviews">("photos");
   const [visibleReviews, setVisibleReviews] = useState(3);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+  const [showRoute, setShowRoute] = useState(false);
 
   // Auto-advance carousel
   useEffect(() => {
@@ -328,30 +340,23 @@ export default function RestaurantDetailPage() {
           </div>
 
           {/* ── Google Map Embed ── */}
-          <div className="w-full rounded-2xl overflow-hidden bg-zinc-800">
-            <iframe
-              title="Restaurant Location"
-              src={`https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3963.5!2d${restaurant.lng}!3d${restaurant.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sng!4v1700000000000!5m2!1sen!2sng`}
-              width="100%"
-              height="480"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="w-full"
+          <div className="w-full h-[480px] rounded-2xl overflow-hidden bg-zinc-800 z-0 relative">
+            <MapEmbed 
+              destinationLat={restaurant.lat} 
+              destinationLng={restaurant.lng} 
+              showRoute={showRoute}
             />
           </div>
 
           {/* Get Directions */}
           <div className="flex justify-center py-6">
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${restaurant.lat},${restaurant.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-2.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors"
+            <button
+              onClick={() => setShowRoute(!showRoute)}
+              className="flex items-center gap-2 px-8 py-2.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer"
             >
-              Get Directions
-            </a>
+              <Route size={18} />
+              {showRoute ? "Hide Directions" : "Get Directions"}
+            </button>
           </div>
 
           {/* ── Photos / Reviews Tabs ── */}
