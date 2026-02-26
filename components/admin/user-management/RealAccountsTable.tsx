@@ -1,52 +1,66 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronUp, ChevronDown, ArrowUpDown } from "lucide-react";
+import Link from "next/link";
+import { ChevronUp, ChevronDown, ArrowUpDown, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UserRowActions } from "@/components/admin/user-management/UserRowActions";
-import type { AdminUser } from "@/types/admin";
+import type { RealAccountUser, UserStatus } from "@/types/admin";
 
+/* ── Status badge: colored dot + text in subtle pill ── */
+function StatusBadge({ status }: { status: UserStatus }) {
+    const config: Record<string, { dot: string; text: string; bg: string }> = {
+        Active:    { dot: "bg-green-500",  text: "text-green-600",  bg: "bg-green-50" },
+        Banned:    { dot: "bg-red-500",    text: "text-red-600",    bg: "bg-red-50" },
+        Suspended: { dot: "bg-orange-400", text: "text-orange-500", bg: "bg-orange-50" },
+        Flagged:   { dot: "bg-amber-500",  text: "text-amber-600",  bg: "bg-amber-50" },
+    };
+    const c = config[status] ?? config.Active;
+
+    return (
+        <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium", c.bg, c.text)}>
+            <span className={cn("w-1.5 h-1.5 rounded-full", c.dot)} />
+            {status}
+        </span>
+    );
+}
+
+/* ── Sortable column config ── */
 export type SortDirection = "asc" | "desc" | null;
-export type SortColumn = keyof AdminUser | null;
+export type SortColumn = keyof RealAccountUser | null;
 
-interface UserTableProps {
-    users: AdminUser[];
+const sortableColumns: { key: keyof RealAccountUser; label: string }[] = [
+    { key: "userId", label: "User ID" },
+    { key: "email", label: "Email" },
+    { key: "registrationDate", label: "Registration Date" },
+    { key: "location", label: "Location" },
+    { key: "totalPosts", label: "Total Posts" },
+];
+
+/* Status column has NO inline sort arrows — sorting is handled by the ArrowUpDown icon */
+const STATUS_COL_KEY: keyof RealAccountUser = "status";
+const STATUS_COL_LABEL = "Status";
+
+/* ── Props ── */
+interface RealAccountsTableProps {
+    users: RealAccountUser[];
     selectedIds: Set<string>;
     onToggleSelect: (id: string) => void;
     onToggleSelectAll: () => void;
     allSelected: boolean;
-    onMarkSafe?: (userId: string) => void;
-    onBanUser?: (userId: string) => void;
 }
 
-/* Columns that show sort chevrons on their headers */
-const sortableColumns: { key: keyof AdminUser; label: string }[] = [
-    { key: "userId", label: "User ID" },
-    { key: "signUpIp", label: "Sign-Up IP" },
-    { key: "email", label: "Email" },
-    { key: "registrationDate", label: "Registration Date" },
-    { key: "location", label: "Location" },
-];
-
-/* System Flag Reason has NO inline sort arrows — sorting for it
-   is handled by the dedicated ArrowUpDown icon in the last column */
-const FLAG_COL_KEY: keyof AdminUser = "systemFlagReason";
-const FLAG_COL_LABEL = "System Flag Reason";
-
-export function UserTable({
+export function RealAccountsTable({
     users,
     selectedIds,
     onToggleSelect,
     onToggleSelectAll,
     allSelected,
-    onMarkSafe,
-    onBanUser,
-}: UserTableProps) {
+}: RealAccountsTableProps) {
     const [sortColumn, setSortColumn] = useState<SortColumn>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
-    // ── Column header sort (for sortable columns) ──
-    const handleHeaderSort = (key: keyof AdminUser) => {
+    // ── Column header sort ──
+    const handleHeaderSort = (key: keyof RealAccountUser) => {
         if (sortColumn === key) {
             if (sortDirection === "asc") setSortDirection("desc");
             else if (sortDirection === "desc") {
@@ -59,9 +73,9 @@ export function UserTable({
         }
     };
 
-    // ── Dedicated sort icon toggles System Flag Reason sort ──
-    const handleFlagSort = () => {
-        handleHeaderSort(FLAG_COL_KEY);
+    // ── Dedicated sort icon toggles Status sort ──
+    const handleStatusSort = () => {
+        handleHeaderSort(STATUS_COL_KEY);
     };
 
     // ── Sort pipeline ──
@@ -70,19 +84,19 @@ export function UserTable({
         return [...users].sort((a, b) => {
             const aVal = String(a[sortColumn] ?? "");
             const bVal = String(b[sortColumn] ?? "");
-            const cmp = aVal.localeCompare(bVal);
+            const cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
             return sortDirection === "asc" ? cmp : -cmp;
         });
     }, [users, sortColumn, sortDirection]);
 
-    const isFlagSorted = sortColumn === FLAG_COL_KEY;
+    const isStatusSorted = sortColumn === STATUS_COL_KEY;
 
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-sm">
                 {/* ── Header ── */}
                 <thead>
-                    <tr className="border-b border-zinc-200 bg-zinc-50/50">
+                    <tr className="border-b border-zinc-200 bg-[#F8F9FA]">
                         <th className="w-12 px-4 py-3">
                             <input
                                 type="checkbox"
@@ -137,23 +151,23 @@ export function UserTable({
                             );
                         })}
 
-                        {/* System Flag Reason — plain text, NO sort arrows */}
+                        {/* Status column — plain text, NO sort arrows */}
                         <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 tracking-wider select-none">
-                            {FLAG_COL_LABEL}
+                            {STATUS_COL_LABEL}
                         </th>
 
-                        {/* Sort icon column — sorts by System Flag Reason */}
+                        {/* Sort icon column — sorts by Status */}
                         <th className="w-12 px-4 py-3">
                             <button
-                                onClick={handleFlagSort}
+                                onClick={handleStatusSort}
                                 title={
-                                    isFlagSorted
+                                    isStatusSorted
                                         ? `Sorted ${sortDirection === "asc" ? "A → Z" : "Z → A"}`
-                                        : "Sort by System Flag Reason"
+                                        : "Sort by Status"
                                 }
                                 className={cn(
                                     "w-7 h-7 flex items-center justify-center rounded transition-colors",
-                                    isFlagSorted
+                                    isStatusSorted
                                         ? "bg-[#fbbe15]/20 text-[#1a1a1a]"
                                         : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100"
                                 )}
@@ -187,21 +201,22 @@ export function UserTable({
                                 <td className="px-4 py-3 text-zinc-700 font-medium">
                                     {user.userId}
                                 </td>
-                                <td className="px-4 py-3 text-zinc-500">{user.signUpIp}</td>
                                 <td className="px-4 py-3 text-zinc-500">{user.email}</td>
                                 <td className="px-4 py-3 text-zinc-500">
                                     {user.registrationDate}
                                 </td>
                                 <td className="px-4 py-3 text-zinc-500">{user.location}</td>
-                                <td className="px-4 py-3 text-zinc-500">
-                                    {user.systemFlagReason}
+                                <td className="px-4 py-3 text-zinc-500">{user.totalPosts}</td>
+                                <td className="px-4 py-3">
+                                    <StatusBadge status={user.status} />
                                 </td>
                                 <td className="px-4 py-3">
-                                    <UserRowActions
-                                        userId={user.id}
-                                        onMarkSafe={onMarkSafe}
-                                        onBanUser={onBanUser}
-                                    />
+                                    <Link
+                                        href={`/secure-admin/user-management/${user.userId}`}
+                                        className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors"
+                                    >
+                                        <Eye size={18} />
+                                    </Link>
                                 </td>
                             </tr>
                         );

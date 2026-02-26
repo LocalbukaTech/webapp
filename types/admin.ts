@@ -1,6 +1,6 @@
 export type UserTab = 'real' | 'fake';
 
-export type UserStatus = 'Active' | 'Flagged' | 'Banned';
+export type UserStatus = 'Active' | 'Flagged' | 'Banned' | 'Suspended';
 
 export interface AdminUser {
     id: string;
@@ -10,6 +10,16 @@ export interface AdminUser {
     registrationDate: string;
     location: string;
     systemFlagReason: string;
+    status: UserStatus;
+}
+
+export interface RealAccountUser {
+    id: string;
+    userId: string;
+    email: string;
+    registrationDate: string;
+    location: string;
+    totalPosts: number;
     status: UserStatus;
 }
 
