@@ -8,6 +8,7 @@ export interface Video {
   comments: number;
   saves: number;
   shares: number;
+  reposts?: number;
 }
 
 export interface VideoAction {

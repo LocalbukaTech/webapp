@@ -22,6 +22,11 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
   const touchEndY = useRef<number | null>(null);
   const isScrolling = useRef(false);
 
+  // Scrubber state
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
   // Play/pause icon overlay state
   const [showPlayPauseIcon, setShowPlayPauseIcon] = useState(false);
   const [lastAction, setLastAction] = useState<"play" | "pause">("pause");
@@ -153,6 +158,35 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
     }
   };
 
+  // Video scrubber handlers
+  const handleTimeUpdate = () => {
+    if (videoRef.current && !isDragging) {
+      const current = videoRef.current.currentTime;
+      const dur = videoRef.current.duration;
+      if (dur > 0) {
+        setProgress((current / dur) * 100);
+      }
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newProgress = parseFloat(e.target.value);
+    setProgress(newProgress);
+    if (videoRef.current) {
+      const newTime = (newProgress / 100) * duration;
+      videoRef.current.currentTime = newTime;
+    }
+  };
+
+  const handleSeekStart = () => setIsDragging(true);
+  const handleSeekEnd = () => setIsDragging(false);
+
   return (
     <div
       ref={containerRef}
@@ -171,6 +205,8 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
         muted={isMuted}
         playsInline
         preload="auto"
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
       />
 
       {/* TikTok-style Play/Pause Icon Overlay */}
@@ -224,6 +260,30 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
         isVerified={video.isVerified}
         hashtags={video.hashtags}
       />
+
+      {/* Scrubber / Progress Bar */}
+      <div 
+        className="absolute bottom-0 left-0 right-0 h-1 md:h-1.5 bg-white/30 cursor-pointer group hover:h-2 md:hover:h-3 transition-all duration-200 z-30"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div 
+          className="absolute top-0 left-0 h-full bg-primary rounded-r-full pointer-events-none"
+          style={{ width: `${progress}%` }}
+        />
+        <input 
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          value={progress}
+          onChange={handleSeek}
+          onMouseDown={handleSeekStart}
+          onMouseUp={handleSeekEnd}
+          onTouchStart={handleSeekStart}
+          onTouchEnd={handleSeekEnd}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        />
+      </div>
     </div>
   );
 }
