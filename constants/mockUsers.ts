@@ -1,4 +1,4 @@
-import type { AdminUser, UserStatus } from '@/types/admin';
+import type { AdminUser, RealAccountUser, UserStatus } from '@/types/admin';
 
 const locations = [
     'Lagos, Nigeria',
@@ -42,7 +42,7 @@ const emails = [
     'nneka.y@live.com',
 ];
 
-const statuses: UserStatus[] = ['Active', 'Flagged', 'Banned'];
+const realStatuses: UserStatus[] = ['Active', 'Banned', 'Suspended'];
 
 // Generate dates in DD/MM/YY format spread across 2024–2025
 function mockDate(index: number): string {
@@ -64,17 +64,20 @@ const ips = [
     '203.0.113.42',
 ];
 
-export const mockRealUsers: AdminUser[] = Array.from({ length: 20 }, (_, i) => ({
+const postCounts = [30, 12, 45, 8, 67, 23, 5, 91, 14, 38, 55, 19, 72, 3, 41, 28, 60, 16, 33, 49];
+
+/* ── Real Account Users ── */
+export const mockRealAccountUsers: RealAccountUser[] = Array.from({ length: 20 }, (_, i) => ({
     id: `real-${i + 1}`,
     userId: `LB-${String(i + 1).padStart(3, '0')}`,
-    signUpIp: ips[i % ips.length],
     email: emails[i % emails.length],
     registrationDate: mockDate(i),
     location: locations[i % locations.length],
-    systemFlagReason: flagReasons[i % flagReasons.length],
-    status: statuses[i % statuses.length],
+    totalPosts: postCounts[i % postCounts.length],
+    status: realStatuses[i % realStatuses.length],
 }));
 
+/* ── Fake / Spam Account Users ── */
 export const mockFakeUsers: AdminUser[] = Array.from({ length: 20 }, (_, i) => ({
     id: `fake-${i + 1}`,
     userId: `LB-${String(100 + i + 1).padStart(3, '0')}`,
@@ -83,5 +86,5 @@ export const mockFakeUsers: AdminUser[] = Array.from({ length: 20 }, (_, i) => (
     registrationDate: mockDate(i + 10),
     location: locations[(i + 2) % locations.length],
     systemFlagReason: flagReasons[(i + 1) % flagReasons.length],
-    status: statuses[(i + 1) % statuses.length],
+    status: realStatuses[(i + 1) % realStatuses.length],
 }));

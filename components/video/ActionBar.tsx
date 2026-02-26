@@ -80,7 +80,7 @@ export function ActionBar({ likes, comments, saves, shares, reposts = 0, onComme
               fill={action.isActive ? "currentColor" : "none"}
             />
           </div>
-          <span className="text-xs font-medium text-white">{formatCount(action.count)}</span>
+          <h6 className="text-xs font-medium text-white">{formatCount(action.count)}</h6>
         </button>
       ))}
     </div>

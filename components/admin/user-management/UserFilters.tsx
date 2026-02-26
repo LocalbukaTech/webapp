@@ -40,6 +40,8 @@ interface UserFiltersProps {
     onFilterChange: (filters: FilterState) => void;
     onClearFilters: () => void;
     onExport?: (format: "csv" | "excel") => void;
+    showFlagReasonFilter?: boolean;
+    searchPlaceholder?: string;
 }
 
 // ── Reusable hooks ──
@@ -352,10 +354,12 @@ function FiltersDropdown({
     filters,
     onChange,
     onClose,
+    showFlagReason = true,
 }: {
     filters: FilterState;
     onChange: (f: FilterState) => void;
     onClose: () => void;
+    showFlagReason?: boolean;
 }) {
     const [local, setLocal] = useState<FilterState>(filters);
 
@@ -406,6 +410,7 @@ function FiltersDropdown({
                 </label>
 
                 {/* Flag Reason */}
+                {showFlagReason && (
                 <label className="block">
                     <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 mb-1">
                         <Flag size={12} /> System Flag Reason
@@ -420,6 +425,7 @@ function FiltersDropdown({
                         ))}
                     </select>
                 </label>
+                )}
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-1">
@@ -483,6 +489,8 @@ export function UserFilters({
     onFilterChange,
     onClearFilters,
     onExport,
+    showFlagReasonFilter = true,
+    searchPlaceholder = "Search by email or ID",
 }: UserFiltersProps) {
     const [openMenu, setOpenMenu] = useState<"date" | "filters" | "export" | null>(null);
 
@@ -506,10 +514,10 @@ export function UserFilters({
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                     <input
                         type="text"
-                        placeholder="Search by email or ID"
+                        placeholder={searchPlaceholder}
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="w-full py-2.5 pl-10 pr-4 text-sm text-zinc-700 bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbbe15]/40 focus:border-[#fbbe15] placeholder:text-zinc-400 transition-all"
+                        className="w-full py-2.5 pl-10 pr-4 text-sm text-zinc-700 bg-gray-50 border-none rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-200 placeholder:text-zinc-400 transition-all"
                     />
                 </div>
 
@@ -566,6 +574,7 @@ export function UserFilters({
                                 filters={filters}
                                 onChange={onFilterChange}
                                 onClose={close}
+                                showFlagReason={showFlagReasonFilter}
                             />
                         )}
                     </div>
