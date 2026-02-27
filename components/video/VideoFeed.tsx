@@ -145,6 +145,7 @@ export function VideoFeed({ videos, initialIndex = 0, initialMuted = true }: Vid
             comments={videoComments[currentVideo.id]?.length || 0}
             saves={currentVideo.saves}
             shares={currentVideo.shares}
+            reposts={currentVideo.reposts || Math.floor(Math.random() * 500)} // Ensure fallback for mock
             onCommentClick={() => setIsCommentsOpen(true)} // opens drawer
           />
         </div>

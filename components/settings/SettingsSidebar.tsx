@@ -17,7 +17,7 @@ const sidebarItems = [
 const footerLinks = [
   { label: "Company", href: "https://localbuka.com/" },
   { label: "Program", href: "/program" },
-  { label: "Terms & Policies", href: "/terms" },
+  { label: "Terms & Policies", href: "https://localbuka.com/privacy" },
 ];
 
 export function SettingsSidebar({ activeSection, onSectionChange }: SettingsSidebarProps) {

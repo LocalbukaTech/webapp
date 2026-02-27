@@ -37,7 +37,7 @@ const router = useRouter();
     <div className="flex items-center justify-between py-3 px-2 rounded-lg transition-colors hover:bg-white/5">
       
       {/* User Info */}
-      <div className="flex items-center gap-3" onClick={() => {router.push('/other-profile')}}>
+      <div className="flex items-center gap-3 cursor-pointer" onClick={() => {router.push('/other-profile')}}>
         <div className="relative w-10 h-10 shrink-0">
           <img
             src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff`}
