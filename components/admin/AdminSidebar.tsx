@@ -1,30 +1,37 @@
 "use client";
 
-import { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-    LayoutDashboard,
-    Users,
-    Store,
-    ShieldCheck,
-    Megaphone,
-    BarChart3,
-    KeyRound,
-    ChevronLeft,
-    ChevronRight,
-} from "lucide-react";
+    faBorderAll,
+    faCircleUser,
+    faStore,
+    faFileLines,
+    faBullhorn,
+    faChartLine,
+    faUserGear,
+    type IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 
-const adminNavItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/secure-admin" },
-    { icon: Users, label: "User Management", href: "/secure-admin/user-management" },
-    { icon: Store, label: "Buka Management", href: "/secure-admin/buka-management" },
-    { icon: ShieldCheck, label: "Content Moderation", href: "/secure-admin/content-moderation" },
-    { icon: Megaphone, label: "Ad Placements", href: "/secure-admin/ad-placements" },
-    { icon: BarChart3, label: "Analytics & Reporting", href: "/secure-admin/analytics" },
-    { icon: KeyRound, label: "Roles", href: "/secure-admin/roles" },
+type NavItem = {
+    label: string;
+    href: string;
+    faIcon: IconDefinition;
+    flip?: boolean;
+};
+
+const adminNavItems: NavItem[] = [
+    { faIcon: faBorderAll, label: "Dashboard", href: "/secure-admin" },
+    { faIcon: faCircleUser, label: "User Management", href: "/secure-admin/user-management" },
+    { faIcon: faStore, label: "Buka Management", href: "/secure-admin/buka-management" },
+    { faIcon: faFileLines, label: "Content Moderation", href: "/secure-admin/content-moderation" },
+    { faIcon: faBullhorn, label: "Ad Placements", href: "/secure-admin/ad-placements", flip: true },
+    { faIcon: faChartLine, label: "Analytics & Reporting", href: "/secure-admin/analytics" },
+    { faIcon: faUserGear, label: "Roles", href: "/secure-admin/roles" },
 ];
 
 interface AdminSidebarProps {
@@ -99,12 +106,19 @@ export function AdminSidebar({ isCollapsed, onToggleCollapse }: AdminSidebarProp
                                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium transition-colors",
                                     isActive
                                         ? "bg-[#fbbe15]/10 text-[#b8860b]"
-                                        : "text-zinc-600 hover:bg-zinc-100",
+                                        : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700",
                                     isCollapsed ? "justify-center px-2" : ""
                                 )}
                                 title={isCollapsed ? item.label : undefined}
                             >
-                                <item.icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
+                                <FontAwesomeIcon
+                                    icon={item.faIcon}
+                                    flip={item.flip ? "horizontal" : undefined}
+                                    className={cn(
+                                        "w-[18px] h-[18px] flex-shrink-0",
+                                        isActive ? "text-[#b8860b]" : ""
+                                    )}
+                                />
                                 {!isCollapsed && <span>{item.label}</span>}
                             </Link>
                         );

@@ -1,9 +1,9 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
 export default function SecureAdminLayout({
-    children,
+  children,
 }: {
-    children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-    return <AdminLayout>{children}</AdminLayout>;
+  return <AdminLayout>{children}</AdminLayout>;
 }

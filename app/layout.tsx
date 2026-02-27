@@ -37,7 +37,7 @@ export default function RootLayout({
         className={`${nunitoSans.variable} ${jetbrainsMono.variable} ${hakuna.variable} font-sans antialiased`}
         style={{ backgroundColor: "#1a1a1a" }}
       >
-         <Providers>
+        <Providers>
           {children}
         </Providers>
       </body>

@@ -1,10 +1,9 @@
 import { ReactNode } from "react";
-import { AdminLayout } from "@/components/admin/layout/AdminLayout";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     // We override the default dark theme locally for the admin area
-    <div className="light bg-[#F9F9FB] text-black h-screen overflow-hidden">
+    <div className="light bg-[#F9F9FB] text-black h-full w-full">
       <style>
         {`
           /* Override body styles for Admin Panel ONLY */
@@ -14,7 +13,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           }
         `}
       </style>
-      <AdminLayout>{children}</AdminLayout>
+      {children}
     </div>
   );
 }
