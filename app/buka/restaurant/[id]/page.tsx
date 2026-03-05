@@ -190,7 +190,7 @@ export default function RestaurantDetailPage() {
   const [activeTab, setActiveTab] = useState<"photos" | "reviews">("photos");
   const [visibleReviews, setVisibleReviews] = useState(3);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
-  const [showRoute, setShowRoute] = useState(false);
+  const [showDirectionsModal, setShowDirectionsModal] = useState(false);
 
   // Auto-advance carousel
   useEffect(() => {
@@ -204,6 +204,16 @@ export default function RestaurantDetailPage() {
   const goToHeroSlide = useCallback((index: number) => {
     setActiveHeroIndex(index);
   }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showDirectionsModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showDirectionsModal]);
 
   return (
     <div className="w-full min-h-screen bg-[#1a1a1a]">
@@ -339,25 +349,54 @@ export default function RestaurantDetailPage() {
             </div>
           </div>
 
-          {/* ── Google Map Embed ── */}
+          {/* ── Static Map Preview ── */}
           <div className="w-full h-[480px] rounded-2xl overflow-hidden bg-zinc-800 z-0 relative">
             <MapEmbed 
               destinationLat={restaurant.lat} 
               destinationLng={restaurant.lng} 
-              showRoute={showRoute}
+              showRoute={false}
             />
           </div>
 
-          {/* Get Directions */}
+          {/* Get Directions — opens fullscreen modal */}
           <div className="flex justify-center py-6">
             <button
-              onClick={() => setShowRoute(!showRoute)}
+              onClick={() => setShowDirectionsModal(true)}
               className="flex items-center gap-2 px-8 py-2.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer"
             >
               <Route size={18} />
-              {showRoute ? "Hide Directions" : "Get Directions"}
+              Get Directions
             </button>
           </div>
+
+          {/* ── Fullscreen Directions Modal ── */}
+          {showDirectionsModal && (
+            <div className="fixed inset-0 z-50 bg-black">
+              {/* Close button */}
+              <button
+                onClick={() => setShowDirectionsModal(false)}
+                className="absolute top-6 left-6 z-1001 flex items-center justify-center w-10 h-10 rounded-full bg-[#2E68E3] text-white hover:bg-[#2558c5] transition-colors cursor-pointer border-none shadow-lg"
+                aria-label="Close directions"
+              >
+                <ArrowLeft size={20} />
+              </button>
+
+              {/* Restaurant name badge */}
+              <div className="absolute top-6 left-20 z-1001 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-xl">
+                <p className="text-sm font-semibold">{restaurant.name}</p>
+                <p className="text-xs text-zinc-400">{restaurant.address}</p>
+              </div>
+
+              {/* Full screen map */}
+              <div className="w-full h-full relative">
+                <MapEmbed 
+                  destinationLat={restaurant.lat} 
+                  destinationLng={restaurant.lng} 
+                  showRoute={true}
+                />
+              </div>
+            </div>
+          )}
 
           {/* ── Photos / Reviews Tabs ── */}
           <div className="border-b border-zinc-700 flex">
