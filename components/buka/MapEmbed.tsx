@@ -76,10 +76,9 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute }: MapEmbed
 
   // Turn-by-turn state
   const [routeSteps, setRouteSteps] = useState<RouteStep[]>([]);
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [currentInstruction, setCurrentInstruction] = useState<string | null>(null);
-  const lastAnnouncedStepRef = useRef(-1);
+  const lastSpokenManeuverRef = useRef<string | null>(null);
+  const hasGivenWarningRef = useRef<boolean>(false);
 
   // Origin icon — standard blue marker for user's current location
   const userIcon = typeof window !== 'undefined' ? new L.Icon({
@@ -303,56 +302,49 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute }: MapEmbed
   useEffect(() => {
     if (!voiceEnabled || !userLocation || routeSteps.length === 0) return;
 
-    const ANNOUNCE_DISTANCE = 100; // meters — announce when within 100m of next step
+    // In a continuously refetched route, routeSteps[0] is the CURRENT segment.
+    // The distance of routeSteps[0] is the remaining distance to the NEXT turn (routeSteps[1]).
+    // If routeSteps.length === 1, we are on the final segment to the destination.
+    const currentSegment = routeSteps[0];
+    const nextManeuver = routeSteps.length > 1 ? routeSteps[1] : currentSegment;
+    
+    const maneuverStr = nextManeuver.instruction;
 
-    for (let i = currentStepIndex; i < routeSteps.length; i++) {
-      const step = routeSteps[i];
-      // OSRM location is [lng, lat], convert to [lat, lng] for haversine
-      const stepLatLng: [number, number] = [step.location[1], step.location[0]];
-      const dist = haversineDistance(userLocation, stepLatLng);
-
-      if (dist < ANNOUNCE_DISTANCE && i > lastAnnouncedStepRef.current) {
-        // Build announcement with distance context
-        const nextStep = routeSteps[i + 1];
-        let announcement = step.instruction;
-        if (nextStep && nextStep.distance > 0) {
-          const distMeters = Math.round(nextStep.distance);
-          if (distMeters >= 1000) {
-            announcement += `. Then in ${(distMeters / 1000).toFixed(1)} kilometers, ${nextStep.instruction}`;
-          } else {
-            announcement += `. Then in ${distMeters} meters, ${nextStep.instruction}`;
-          }
-        }
-
-        speak(announcement);
-        setCurrentInstruction(step.instruction);
-        setCurrentStepIndex(i);
-        lastAnnouncedStepRef.current = i;
-        break;
+    if (maneuverStr !== lastSpokenManeuverRef.current) {
+      // NEW maneuver! The user just completed a turn, or just started the route.
+      lastSpokenManeuverRef.current = maneuverStr;
+      hasGivenWarningRef.current = false;
+      
+      // If it's far away, announce the long-range instruction
+      if (currentSegment.distance > 150) {
+        speak(`Continue for ${Math.round(currentSegment.distance)} meters, then ${maneuverStr.toLowerCase()}`);
+      } else {
+        // It's already close, just give the immediate warning
+        speak(`In ${Math.round(currentSegment.distance)} meters, ${maneuverStr.toLowerCase()}`);
+        hasGivenWarningRef.current = true;
+      }
+    } else {
+      // We are approaching the SAME maneuver we already know about.
+      // Have we given the < 100m warning yet?
+      if (!hasGivenWarningRef.current && currentSegment.distance < 100) {
+        speak(`In ${Math.round(currentSegment.distance)} meters, ${maneuverStr.toLowerCase()}`);
+        hasGivenWarningRef.current = true;
       }
     }
-  }, [userLocation, routeSteps, currentStepIndex, voiceEnabled, speak]);
+  }, [userLocation, routeSteps, voiceEnabled, speak]);
 
-  // ---- Announce start when voice is enabled ----
-  useEffect(() => {
-    if (voiceEnabled && routeSteps.length > 0 && lastAnnouncedStepRef.current === -1) {
-      const firstStep = routeSteps[0];
-      speak(firstStep.instruction);
-      setCurrentInstruction(firstStep.instruction);
-      lastAnnouncedStepRef.current = 0;
-      setCurrentStepIndex(0);
-    }
-  }, [voiceEnabled, routeSteps, speak]);
-
-  // Reset announced step when voice is toggled off
+  // Reset tracking when voice is toggled
   const toggleVoice = useCallback(() => {
     setVoiceEnabled(prev => {
       if (prev) {
         // Turning off
         if (typeof window !== 'undefined') window.speechSynthesis.cancel();
-        setCurrentInstruction(null);
-        lastAnnouncedStepRef.current = -1;
-        setCurrentStepIndex(0);
+        lastSpokenManeuverRef.current = null;
+        hasGivenWarningRef.current = false;
+      } else {
+        // Turning on
+        lastSpokenManeuverRef.current = null;
+        hasGivenWarningRef.current = false;
       }
       return !prev;
     });
@@ -405,11 +397,15 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute }: MapEmbed
       )}
 
       {/* Turn-by-turn instruction — centered overlay */}
-      {showRoute && voiceEnabled && currentInstruction && (
+      {showRoute && voiceEnabled && routeSteps.length > 0 && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-1000 w-[85%] max-w-md pointer-events-none">
           <div className="bg-black/70 backdrop-blur-md text-white px-5 py-4 rounded-2xl text-center shadow-2xl animate-in fade-in zoom-in-95 duration-300">
             <Navigation size={20} className="mx-auto mb-2 text-[#fbbe15]" />
-            <p className="text-sm font-semibold leading-relaxed">{currentInstruction}</p>
+            <p className="text-sm font-semibold leading-relaxed">
+              {routeSteps.length > 1 
+                ? `In ${Math.round(routeSteps[0].distance)}m, ${routeSteps[1].instruction}` 
+                : routeSteps[0].instruction}
+            </p>
           </div>
         </div>
       )}
