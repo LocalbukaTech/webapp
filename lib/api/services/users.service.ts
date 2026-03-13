@@ -13,8 +13,8 @@ export const usersService = {
     getUserById: (id: string) =>
         api.get<ApiResponse<AdminUser>>(`/admin/users/${id}`),
 
-    flagUser: (id: string, reason: string) =>
-        api.patch<ApiResponse<AdminUser>>(`/admin/users/${id}/flag`, { reason }),
+    flagUser: (id: string, payload: { reason: string; status: string }) =>
+        api.patch<ApiResponse<AdminUser>>(`/admin/users/${id}/flag`, payload),
 
     deleteUser: (id: string) =>
         api.delete<ApiResponse<void>>(`/admin/users/${id}`),

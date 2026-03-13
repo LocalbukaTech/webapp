@@ -6,7 +6,8 @@ import { Video } from "@/types/video";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { ActionBar } from "@/components/video/ActionBar";
 import { VideoNavigation } from "@/components/video/VideoNavigation";
-import Comments from "@/components/video/comments"; // default import
+import Comments from "@/components/video/comments";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 interface Comment {
   id: string;
@@ -37,21 +38,25 @@ export function VideoFeed({ videos, initialIndex = 0, initialMuted = true }: Vid
     return initial;
   });
 
+  const { requireAuth } = useRequireAuth();
+
   // --- ADD COMMENT HANDLER ---
   const handleAddComment = (text: string) => {
-    const videoId = videos[currentIndex].id;
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      user: "You",
-      time: "Just now",
-      text,
-      avatar: "",
-    };
+    requireAuth(() => {
+      const videoId = videos[currentIndex].id;
+      const newComment: Comment = {
+        id: Date.now().toString(),
+        user: "You",
+        time: "Just now",
+        text,
+        avatar: "",
+      };
 
-    setVideoComments((prev) => ({
-      ...prev,
-      [videoId]: [...(prev[videoId] || []), newComment],
-    }));
+      setVideoComments((prev) => ({
+        ...prev,
+        [videoId]: [...(prev[videoId] || []), newComment],
+      }));
+    });
   };
 
   // --- COMMENTS DRAWER STATE ---

@@ -3,24 +3,60 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ChevronRight, Ban, AlertCircle, Play, User } from "lucide-react";
+import { ArrowLeft, ChevronRight, Ban, AlertCircle, Play, User, CheckCircle, Loader2 } from "lucide-react";
 import { AdminTabs } from "@/components/admin/ui/AdminTabs";
 import { SuspendAccountModal } from "@/components/admin/ui/SuspendAccountModal";
 import { BanUserModal } from "@/components/admin/ui/BanUserModal";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useUser, useFlagUser } from "@/lib/api/services/users.hooks";
+import { useToast } from "@/hooks/use-toast";
 
 export default function UserDetails() {
   const [activeTab, setActiveTab] = useState("User Details");
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [isBanModalOpen, setIsBanModalOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
   
-  // Extract ID from path or use generic "User 1"
+  // Extract ID from path
   const userIdSegment = pathname?.split("/").pop();
-  const displayId =  userIdSegment || "User 1";
+  const displayId = userIdSegment || "";
+
+  // API Hooks
+  const { data: userResp, isLoading } = useUser(displayId);
+  const { mutateAsync: flagUserAsync, isPending: isFlagging } = useFlagUser();
+  
+  const user = userResp?.data;
+
+  const handleFlagAction = async (status: string, reason: string) => {
+    if (!user) return;
+    try {
+      await flagUserAsync({ id: user.id, reason, status });
+      toast({
+        title: "Success",
+        description: `User successfully marked as ${status}`
+      });
+    } catch (e: any) {
+      toast({
+        title: "Error",
+        description: e?.message || `Failed to mark user as ${status}`,
+        variant: "destructive"
+      });
+      throw e; // re-throw for modal to catch if needed
+    }
+  };
 
   // Tab Content Renderers
-  const renderUserDetails = () => (
+  const renderUserDetails = () => {
+    if (isLoading) {
+       return <div className="p-8 text-center text-gray-500">Loading user details...</div>;
+    }
+    if (!user) {
+       return <div className="p-8 text-center text-red-500">User not found</div>;
+    }
+
+    return (
     <div className="flex flex-col max-w-5xl mt-8">
       {/* Avatar Container */}
       <div className="w-24 h-24 bg-[#FCF7E8] rounded-xl flex items-center justify-center mb-10 border border-yellow-100">
@@ -30,14 +66,12 @@ export default function UserDetails() {
       {/* Details List */}
       <div className="flex flex-col space-y-5">
         {[
-          { label: "User ID", value: "LB-001" },
-          { label: "Full Name", value: "James Obi" },
-          { label: "Location", value: "Lagos, Nigeria" },
-          { label: "Phone Number", value: "090 111 222 333" },
-          { label: "Email Address", value: "jamesobi@gmail.com" },
-          { label: "Followers", value: "1,056" },
-          { label: "Following", value: "290" },
-          { label: "Posts", value: "60" },
+          { label: "User ID", value: user.id },
+          { label: "Full Name", value: user.fullName || "-" },
+          { label: "Location", value: user.location || "-" },
+          { label: "Email Address", value: user.email },
+          { label: "Status", value: user.status },
+          { label: "Joined", value: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-" },
         ].map((item, idx) => (
           <div key={idx} className="flex justify-between items-center text-[15px]">
             <span className="text-gray-500">{item.label}</span>
@@ -47,6 +81,7 @@ export default function UserDetails() {
       </div>
     </div>
   );
+  };
 
   const renderContent = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-8">
@@ -120,7 +155,7 @@ export default function UserDetails() {
           User Accounts
         </Link>
         <ChevronRight size={14} className="text-gray-400" />
-        <span className="font-semibold text-gray-900">{displayId}</span>
+        <span className="font-semibold text-gray-900">{isLoading ? "Loading..." : (user?.fullName || displayId)}</span>
       </div>
 
       {/* Main Card */}
@@ -143,19 +178,41 @@ export default function UserDetails() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3 pb-3 lg:pb-4 pr-1">
+            {user?.status === "Suspended" || user?.status === "Banned" ? (
+              <button 
+                onClick={() => handleFlagAction("Active", "Reactivated by Admin")}
+                disabled={isFlagging}
+                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors rounded-lg text-sm font-semibold disabled:opacity-50"
+              >
+                {isFlagging ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                Reactivate Account
+              </button>
+            ) : null}
+
             <button 
               onClick={() => setIsSuspendModalOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#FCF7E8] text-[#D39B0A] hover:bg-[#f5ebd0] transition-colors rounded-lg text-sm font-semibold"
+              disabled={user?.status === "Suspended" || isFlagging}
+              className={`flex items-center gap-1.5 px-4 py-2 transition-colors rounded-lg text-sm font-semibold ${
+                user?.status === "Suspended"
+                  ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                  : "bg-[#FCF7E8] text-[#D39B0A] hover:bg-[#f5ebd0]"
+              }`}
             >
               <AlertCircle size={16} />
-              Suspend Account
+              {user?.status === "Suspended" ? "Suspended" : "Suspend Account"}
             </button>
+
             <button 
               onClick={() => setIsBanModalOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#FEF2F2] text-[#EF4444] hover:bg-[#fee2e2] transition-colors rounded-lg text-sm font-semibold"
+              disabled={user?.status === "Banned" || isFlagging}
+              className={`flex items-center gap-1.5 px-4 py-2 transition-colors rounded-lg text-sm font-semibold ${
+                user?.status === "Banned"
+                  ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                  : "bg-[#FEF2F2] text-[#EF4444] hover:bg-[#fee2e2]"
+              }`}
             >
               <Ban size={16} />
-              Ban User
+              {user?.status === "Banned" ? "Banned" : "Ban User"}
             </button>
           </div>
         </div>
@@ -173,13 +230,21 @@ export default function UserDetails() {
       <SuspendAccountModal 
         isOpen={isSuspendModalOpen} 
         onClose={() => setIsSuspendModalOpen(false)} 
-        onSuspend={() => setIsSuspendModalOpen(false)} 
+        onSuspend={async (reason) => {
+          await handleFlagAction("Suspended", reason);
+          setIsSuspendModalOpen(false);
+        }}
+        isLoading={isFlagging}
       />
 
       <BanUserModal 
         isOpen={isBanModalOpen} 
         onClose={() => setIsBanModalOpen(false)} 
-        onBan={() => setIsBanModalOpen(false)} 
+        onBan={async (reason) => {
+          await handleFlagAction("Banned", reason);
+          setIsBanModalOpen(false);
+        }}
+        isLoading={isFlagging}
       />
     </div>
   );

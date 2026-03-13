@@ -4,6 +4,7 @@ import { Heart, MessageCircle, Bookmark, Share2, Repeat } from "lucide-react";
 import { formatCount } from "@/constants/mockVideos";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 
 interface ActionBarProps {
   likes: number;
@@ -15,6 +16,7 @@ interface ActionBarProps {
 }
 
 export function ActionBar({ likes, comments, saves, shares, reposts = 0, onCommentClick }: ActionBarProps) {
+  const { requireAuth } = useRequireAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isReposted, setIsReposted] = useState(false);
@@ -25,7 +27,7 @@ export function ActionBar({ likes, comments, saves, shares, reposts = 0, onComme
       count: likes,
       label: "Like",
       isActive: isLiked,
-      onClick: () => setIsLiked(!isLiked),
+      onClick: () => requireAuth(() => setIsLiked(!isLiked)),
       activeClass: "text-red-500",
     },
     {
@@ -33,7 +35,7 @@ export function ActionBar({ likes, comments, saves, shares, reposts = 0, onComme
       count: comments,
       label: "Comment",
       isActive: false,
-      onClick: onCommentClick,
+      onClick: () => requireAuth(() => onCommentClick?.()),
       activeClass: "",
     },
     {
@@ -41,7 +43,7 @@ export function ActionBar({ likes, comments, saves, shares, reposts = 0, onComme
       count: saves,
       label: "Save",
       isActive: isSaved,
-      onClick: () => setIsSaved(!isSaved),
+      onClick: () => requireAuth(() => setIsSaved(!isSaved)),
       activeClass: "text-[#fbbe15]",
     },
     {
@@ -57,8 +59,8 @@ export function ActionBar({ likes, comments, saves, shares, reposts = 0, onComme
       count: reposts as number,
       label: "Repost",
       isActive: isReposted,
-      onClick: () => setIsReposted(!isReposted),
-      activeClass: "text-green-500", // Using green-500 for repost similar to TikTok/Twitter
+      onClick: () => requireAuth(() => setIsReposted(!isReposted)),
+      activeClass: "text-green-500",
     },
   ];
 
