@@ -2,7 +2,6 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import Link from "next/link";
 import { BukaCard, BukaRestaurant } from "@/components/buka/BukaCard";
 
 interface BukaCategoryProps {
@@ -103,9 +102,7 @@ export function BukaCategory({ title, restaurants }: BukaCategoryProps) {
               className="shrink-0"
               style={{ width: "calc((100% - 40px) / 3)" }}
             >
-              <Link href={`/buka/restaurant/${restaurant.id}`}>
-                <BukaCard restaurant={restaurant} />
-              </Link>
+              <BukaCard restaurant={restaurant} />
             </div>
           ))}
         </div>

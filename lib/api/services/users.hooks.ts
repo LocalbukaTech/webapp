@@ -32,8 +32,8 @@ export const useFlagUser = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-            usersService.flagUser(id, reason),
+        mutationFn: ({ id, reason, status }: { id: string; reason: string; status: string }) =>
+            usersService.flagUser(id, { reason, status }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
         },

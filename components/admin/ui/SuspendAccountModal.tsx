@@ -1,12 +1,16 @@
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface SuspendAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuspend: () => void;
+  onSuspend: (reason: string) => void;
+  isLoading?: boolean;
 }
 
-export function SuspendAccountModal({ isOpen, onClose, onSuspend }: SuspendAccountModalProps) {
+export function SuspendAccountModal({ isOpen, onClose, onSuspend, isLoading }: SuspendAccountModalProps) {
+  const [reason, setReason] = useState("");
+
   if (!isOpen) return null;
 
   return (
@@ -36,6 +40,8 @@ export function SuspendAccountModal({ isOpen, onClose, onSuspend }: SuspendAccou
               Reason for Suspension
             </label>
             <textarea 
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
               className="w-full border border-gray-400 rounded-xl px-4 py-3 text-gray-700 min-h-[60px] resize-none focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-200 text-[15px]" 
               placeholder="Text"
               rows={2}
@@ -66,9 +72,11 @@ export function SuspendAccountModal({ isOpen, onClose, onSuspend }: SuspendAccou
             No, Cancel
           </button>
           <button 
-            onClick={onSuspend}
-            className="flex-1 py-4 bg-[#fbbe15] text-[#0f172a] font-semibold text-[16px] rounded-xl hover:bg-[#eab308] transition-colors shadow-sm"
+            onClick={() => onSuspend(reason)}
+            disabled={isLoading}
+            className="flex-1 py-4 bg-[#fbbe15] text-[#0f172a] font-semibold text-[16px] rounded-xl hover:bg-[#eab308] transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
           >
+            {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
             Yes, Suspend
           </button>
         </div>

@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronUp, ChevronDown, ArrowUpDown, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { RealAccountUser, UserStatus } from "@/types/admin";
+import type { AdminUser, UserStatus } from "@/types/admin";
 
 /* ── Status badge: colored dot + text in subtle pill ── */
 function StatusBadge({ status }: { status: UserStatus }) {
@@ -26,27 +26,30 @@ function StatusBadge({ status }: { status: UserStatus }) {
 
 /* ── Sortable column config ── */
 export type SortDirection = "asc" | "desc" | null;
-export type SortColumn = keyof RealAccountUser | null;
+export type SortColumn = keyof AdminUser | null;
 
-const sortableColumns: { key: keyof RealAccountUser; label: string }[] = [
-    { key: "userId", label: "User ID" },
+const sortableColumns: { key: keyof AdminUser; label: string }[] = [
+    { key: "id", label: "User ID" },
     { key: "email", label: "Email" },
-    { key: "registrationDate", label: "Registration Date" },
+    { key: "createdAt", label: "Registration Date" },
     { key: "location", label: "Location" },
     { key: "totalPosts", label: "Total Posts" },
 ];
 
 /* Status column has NO inline sort arrows — sorting is handled by the ArrowUpDown icon */
-const STATUS_COL_KEY: keyof RealAccountUser = "status";
+const STATUS_COL_KEY: keyof AdminUser = "status";
 const STATUS_COL_LABEL = "Status";
 
 /* ── Props ── */
 interface RealAccountsTableProps {
-    users: RealAccountUser[];
+    users: AdminUser[];
     selectedIds: Set<string>;
     onToggleSelect: (id: string) => void;
     onToggleSelectAll: () => void;
     allSelected: boolean;
+    sortColumn: SortColumn;
+    sortDirection: SortDirection;
+    onSortChange: (column: SortColumn, direction: SortDirection) => void;
 }
 
 export function RealAccountsTable({
@@ -55,21 +58,20 @@ export function RealAccountsTable({
     onToggleSelect,
     onToggleSelectAll,
     allSelected,
+    sortColumn,
+    sortDirection,
+    onSortChange,
 }: RealAccountsTableProps) {
-    const [sortColumn, setSortColumn] = useState<SortColumn>(null);
-    const [sortDirection, setSortDirection] = useState<SortDirection>(null);
 
     // ── Column header sort ──
-    const handleHeaderSort = (key: keyof RealAccountUser) => {
+    const handleHeaderSort = (key: keyof AdminUser) => {
         if (sortColumn === key) {
-            if (sortDirection === "asc") setSortDirection("desc");
+            if (sortDirection === "asc") onSortChange(key, "desc");
             else if (sortDirection === "desc") {
-                setSortColumn(null);
-                setSortDirection(null);
+                onSortChange(null, null);
             }
         } else {
-            setSortColumn(key);
-            setSortDirection("asc");
+            onSortChange(key, "asc");
         }
     };
 
@@ -78,16 +80,7 @@ export function RealAccountsTable({
         handleHeaderSort(STATUS_COL_KEY);
     };
 
-    // ── Sort pipeline ──
-    const sortedUsers = useMemo(() => {
-        if (!sortColumn || !sortDirection) return users;
-        return [...users].sort((a, b) => {
-            const aVal = String(a[sortColumn] ?? "");
-            const bVal = String(b[sortColumn] ?? "");
-            const cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
-            return sortDirection === "asc" ? cmp : -cmp;
-        });
-    }, [users, sortColumn, sortDirection]);
+    const sortedUsers = users;
 
     const isStatusSorted = sortColumn === STATUS_COL_KEY;
 
@@ -199,20 +192,20 @@ export function RealAccountsTable({
                                     />
                                 </td>
                                 <td className="px-4 py-3 text-zinc-700 font-medium">
-                                    {user.userId}
+                                    {user.id}
                                 </td>
-                                <td className="px-4 py-3 text-zinc-500">{user.email}</td>
+                                <td className="px-4 py-3 text-zinc-500">{user.email || "-"}</td>
                                 <td className="px-4 py-3 text-zinc-500">
-                                    {user.registrationDate}
+                                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}
                                 </td>
-                                <td className="px-4 py-3 text-zinc-500">{user.location}</td>
-                                <td className="px-4 py-3 text-zinc-500">{user.totalPosts}</td>
+                                <td className="px-4 py-3 text-zinc-500">{user.location || "-"}</td>
+                                <td className="px-4 py-3 text-zinc-500">{user.totalPosts ?? "-"}</td>
                                 <td className="px-4 py-3">
                                     <StatusBadge status={user.status} />
                                 </td>
                                 <td className="px-4 py-3">
                                     <Link
-                                        href={`/secure-admin/user-management/${user.userId}`}
+                                        href={`/secure-admin/user-management/${user.id}`}
                                         className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors"
                                     >
                                         <Eye size={18} />

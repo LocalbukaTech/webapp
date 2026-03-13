@@ -1,67 +1,17 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { Search, MapPin, ChevronDown, Filter } from "lucide-react";
-import { CuisineHero } from "@/components/buka/CuisineHero";
+import { Search, MapPin, ChevronDown, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { CuisineFilters, FilterState } from "@/components/buka/CuisineFilters";
 import { BukaCard, BukaRestaurant } from "@/components/buka/BukaCard";
 import { Pagination } from "@/components/buka/Pagination";
-import { Images } from "@/public/images";
-import { useRestaurantsByCuisine, useSearchRestaurants } from "@/lib/api";
+import { useRestaurants, useSearchRestaurants } from "@/lib/api";
 import { CgSpinner } from "react-icons/cg";
-
-// Map slug → cuisine filter name
-const SLUG_TO_CUISINE: Record<string, string> = {
-  "nigeria-cuisine": "Nigerian Cuisine",
-  "yoruba-cuisine": "Yoruba Cuisine",
-  "igbo-cuisine": "Igbo Cuisine",
-  "hausa-cuisine": "Hausa Cuisine",
-  "calabar-cuisine": "Calabar Cuisine",
-  "edo-cuisine": "Edo Cuisine",
-};
-
-// Cuisine metadata
-const CUISINE_META: Record<string, { name: string; description: string; images: string[] }> = {
-  "nigeria-cuisine": {
-    name: "Nigeria Cuisines",
-    description:
-      "Nigerian cuisine is bold, spicy, and diverse, showcasing rich flavors from rice, yam, and traditional stews.",
-    images: [Images.image1, Images.image2, Images.image3],
-  },
-  "yoruba-cuisine": {
-    name: "Yoruba Cuisines",
-    description:
-      "Yoruba cuisine features amala, ewedu, gbegiri, and rich assorted meat stews from Southwest Nigeria.",
-    images: [Images.image2, Images.image1, Images.image3],
-  },
-  "igbo-cuisine": {
-    name: "Igbo Cuisines",
-    description:
-      "Igbo cuisine is known for ofe nsala, oha soup, abacha, and flavorful dishes from the East.",
-    images: [Images.image3, Images.image1, Images.image2],
-  },
-  "hausa-cuisine": {
-    name: "Hausa Cuisines",
-    description:
-      "Hausa cuisine brings tuwo shinkafa, miyan kuka, kilishi, and Northern Nigerian flavors.",
-    images: [Images.image1, Images.image3, Images.image2],
-  },
-  "calabar-cuisine": {
-    name: "Calabar Cuisines",
-    description:
-      "Calabar cuisine is famous for edikang ikong, afang soup, and rich Cross River delicacies.",
-    images: [Images.image2, Images.image3, Images.image1],
-  },
-  "edo-cuisine": {
-    name: "Edo Cuisines",
-    description:
-      "Edo cuisine features owo soup, black soup, and the culinary traditions of Benin Kingdom.",
-    images: [Images.image3, Images.image2, Images.image1],
-  },
-};
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 const LOCATIONS = [
+  "Current Location",
   "Ikeja, Lagos",
   "Victoria Island, Lagos",
   "Lekki, Lagos",
@@ -69,7 +19,7 @@ const LOCATIONS = [
   "Port Harcourt, Rivers",
 ];
 
-const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
+const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
   "Ikeja, Lagos": { lat: 6.6018, lng: 3.3515 },
   "Victoria Island, Lagos": { lat: 6.4281, lng: 3.4219 },
   "Lekki, Lagos": { lat: 6.4698, lng: 3.5852 },
@@ -77,20 +27,26 @@ const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
   "Port Harcourt, Rivers": { lat: 4.8156, lng: 7.0498 },
 };
 
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE = 12;
 
-// Fallback image utility
-const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80";
+const PLACEHOLDER_IMG =
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80";
 
 function mapToBukaRestaurant(apiRest: any): BukaRestaurant {
   return {
     id: apiRest.id || apiRest.googlePlaceId || Math.random().toString(),
     name: apiRest.name,
-    image: (apiRest.photos && apiRest.photos.length > 0) ? apiRest.photos[0] : PLACEHOLDER_IMG,
+    image:
+      apiRest.photos && apiRest.photos.length > 0
+        ? apiRest.photos[0]
+        : PLACEHOLDER_IMG,
     rating: apiRest.avgRating || apiRest.googleRating || 0,
     reviewCount: apiRest.reviewCount || 0,
-    address: apiRest.address || `${apiRest.city || ''}, ${apiRest.state || ''}`,
-    tags: [apiRest.cuisine, apiRest.source === 'google' ? 'Google' : 'Local'].filter(Boolean),
+    address: apiRest.address || `${apiRest.city || ""}, ${apiRest.state || ""}`,
+    tags: [
+      apiRest.cuisine,
+      apiRest.source === "google" ? "Google" : "Local",
+    ].filter(Boolean),
     hygiene: 5.0,
     affordability: 5.0,
     foodQuality: 5.0,
@@ -98,61 +54,64 @@ function mapToBukaRestaurant(apiRest: any): BukaRestaurant {
   };
 }
 
-export default function CuisineDetailPage() {
-  const params = useParams();
-  const cuisineSlug = params.cuisine as string;
-  const cuisineData = CUISINE_META[cuisineSlug] || CUISINE_META["nigeria-cuisine"];
-  const activeCuisine = SLUG_TO_CUISINE[cuisineSlug] || "";
+export default function ExploreRestaurantsPage() {
+  const router = useRouter();
+  const { lat: userLat, lng: userLng, loading: loadingGeo } = useGeolocation();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedLocation, setSelectedLocation] = useState("Ikeja, Lagos");
+  const [selectedLocation, setSelectedLocation] = useState("Current Location");
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const locationRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Get actual fetching from APi
-  const apiCuisineName = cuisineSlug.replace("-cuisine", "").replace("-", " ");
-  // Provide a safe default location city for fetching initially maybe? 
-  // We'll extract city for API call if selectedLocation is e.g. "Ikeja, Lagos" -> "Lagos"
-  const locationParts = selectedLocation.split(', ');
+  // Extract city for API call
+  const locationParts = selectedLocation.split(", ");
   const city = locationParts.length > 1 ? locationParts[1] : locationParts[0];
 
-  const { data: cuisineRes, isLoading: isLoadingCuisine } = useRestaurantsByCuisine(apiCuisineName, {
+  // Fetch ALL restaurants from DB
+  const { data: allRes, isLoading: isLoadingAll } = useRestaurants({
     page: currentPage,
     pageSize: ITEMS_PER_PAGE,
     city,
   });
 
-  const coords = LOCATION_COORDS[selectedLocation] || { lat: 6.5244, lng: 3.3792 };
-  const { data: fallbackSearchRes, isLoading: isLoadingFallback } = useSearchRestaurants({
-    lat: coords.lat,
-    lng: coords.lng,
-    page: currentPage,
-    pageSize: ITEMS_PER_PAGE,
-  });
+  // Google fallback search
+  const isCurrentLocation = selectedLocation === "Current Location";
+  const coords = isCurrentLocation 
+    ? { lat: userLat || 6.5244, lng: userLng || 3.3792 }
+    : (LOCATION_COORDS[selectedLocation] || { lat: 6.5244, lng: 3.3792 });
 
-  const isLoading = isLoadingCuisine || isLoadingFallback;
+  const { data: fallbackRes, isLoading: isLoadingFallback } =
+    useSearchRestaurants({
+      lat: coords.lat,
+      lng: coords.lng,
+      page: currentPage,
+      pageSize: ITEMS_PER_PAGE,
+    }, isCurrentLocation ? !loadingGeo : true);
 
+  const isLoading = isLoadingAll || isLoadingFallback;
+
+  // Combine DB + fallback, deduplicate
   const apiRestaurants: BukaRestaurant[] = useMemo(() => {
-    let rawCuisine: any[] = [];
-    if (cuisineRes && Array.isArray((cuisineRes as any).data)) {
-      rawCuisine = (cuisineRes as any).data;
-    } else if (cuisineRes && (cuisineRes as any).data?.data && Array.isArray((cuisineRes as any).data.data)) {
-      rawCuisine = (cuisineRes as any).data.data;
-    } else if (Array.isArray(cuisineRes)) {
-      rawCuisine = cuisineRes as any[];
+    let rawDb: any[] = [];
+    if (allRes && (allRes as any).data?.data && Array.isArray((allRes as any).data.data)) {
+      rawDb = (allRes as any).data.data;
+    } else if (allRes && Array.isArray((allRes as any).data)) {
+      rawDb = (allRes as any).data;
+    } else if (Array.isArray(allRes)) {
+      rawDb = allRes as any[];
     }
 
     let rawFallback: any[] = [];
-    if (fallbackSearchRes && Array.isArray((fallbackSearchRes as any).data)) {
-      rawFallback = (fallbackSearchRes as any).data;
-    } else if (Array.isArray(fallbackSearchRes)) {
-      rawFallback = fallbackSearchRes as any[];
+    if (fallbackRes && Array.isArray((fallbackRes as any).data)) {
+      rawFallback = (fallbackRes as any).data;
+    } else if (Array.isArray(fallbackRes)) {
+      rawFallback = fallbackRes as any[];
     }
 
-    const combined = [...rawCuisine, ...rawFallback];
+    const combined = [...rawDb, ...rawFallback];
     const uniqueMap = new Map();
     combined.forEach((c: any) => {
       const id = c.id || c.googlePlaceId;
@@ -160,20 +119,24 @@ export default function CuisineDetailPage() {
     });
 
     return Array.from(uniqueMap.values()).map(mapToBukaRestaurant);
-  }, [cuisineRes, fallbackSearchRes]);
+  }, [allRes, fallbackRes]);
 
+  // Filters — no default cuisine
   const [filters, setFilters] = useState<FilterState>({
     minPrice: "",
     maxPrice: "",
     rating: null,
     foodQuality: null,
-    cuisines: activeCuisine ? [activeCuisine] : [],
+    cuisines: [],
   });
 
-  // Close location dropdown when clicking outside
+  // Close location dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (locationRef.current && !locationRef.current.contains(e.target as Node)) {
+      if (
+        locationRef.current &&
+        !locationRef.current.contains(e.target as Node)
+      ) {
         setIsLocationOpen(false);
       }
     };
@@ -181,22 +144,24 @@ export default function CuisineDetailPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Focus search input when opened
+  // Focus search input
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [isSearchOpen]);
 
-  // Apply filters on client side
+  // Client-side filtering
   const filteredRestaurants = useMemo(() => {
     return apiRestaurants.filter((r) => {
       if (filters.rating && r.rating < filters.rating) return false;
-      if (filters.foodQuality && r.foodQuality < filters.foodQuality) return false;
+      if (filters.foodQuality && r.foodQuality < filters.foodQuality)
+        return false;
       if (filters.cuisines.length > 0) {
-        // Just checking if any tag partially matches one of the filters 
-        const hasCuisine = r.tags.some((tag) => 
-          filters.cuisines.some(f => tag.toLowerCase().includes(f.toLowerCase().replace(' cuisine', '')))
+        const hasCuisine = r.tags.some((tag) =>
+          filters.cuisines.some((f) =>
+            tag.toLowerCase().includes(f.toLowerCase().replace(" cuisine", ""))
+          )
         );
         if (!hasCuisine) return false;
       }
@@ -211,14 +176,15 @@ export default function CuisineDetailPage() {
   }, [filters, searchQuery, apiRestaurants]);
 
   const totalPages = Math.max(
-    (cuisineRes as any)?.data?.totalPages || 1,
-    (fallbackSearchRes as any)?.totalPages || (fallbackSearchRes as any)?.data?.totalPages || 1
+    (allRes as any)?.data?.totalPages || 1,
+    (fallbackRes as any)?.totalPages ||
+      (fallbackRes as any)?.data?.totalPages ||
+      1
   );
-  const paginatedRestaurants = filteredRestaurants; // if pagination is handled by backend, we don't slice here.
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 500, behavior: "smooth" });
+    window.scrollTo({ top: 200, behavior: "smooth" });
   };
 
   const handleFilterChange = (newFilters: FilterState) => {
@@ -229,15 +195,27 @@ export default function CuisineDetailPage() {
   return (
     <div className="w-full min-h-screen bg-[#1a1a1a]">
       <div className="max-w-[1440px] mx-auto">
-        {/* Hero Carousel */}
-        <CuisineHero
-          name={cuisineData.name}
-          description={cuisineData.description}
-          images={cuisineData.images}
-        />
+        {/* ── Compact Header ── */}
+        <div className="w-[92%] mx-auto pt-8 pb-4 flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 flex items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10 transition-colors cursor-pointer"
+            aria-label="Go back"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-white text-2xl font-bold">
+              Explore Restaurants
+            </h1>
+            <p className="text-zinc-400 text-sm mt-0.5">
+              Discover the best bukas and restaurants near you
+            </p>
+          </div>
+        </div>
 
-        {/* Location & Search Bar */}
-        <div className="w-[92%] mx-auto py-8">
+        {/* ── Location & Search Bar ── */}
+        <div className="w-[92%] mx-auto py-4">
           <div className="flex items-center justify-between">
             {/* Location LOV */}
             <div className="relative" ref={locationRef}>
@@ -257,7 +235,6 @@ export default function CuisineDetailPage() {
                 />
               </button>
 
-              {/* Dropdown */}
               {isLocationOpen && (
                 <div className="absolute top-14 left-0 w-full bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50">
                   {LOCATIONS.map((loc) => (
@@ -266,6 +243,7 @@ export default function CuisineDetailPage() {
                       onClick={() => {
                         setSelectedLocation(loc);
                         setIsLocationOpen(false);
+                        setCurrentPage(1);
                       }}
                       className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
                         selectedLocation === loc
@@ -282,7 +260,6 @@ export default function CuisineDetailPage() {
 
             {/* Search area */}
             <div className="flex items-center gap-3">
-              {/* Expandable search input */}
               <div
                 className={`overflow-hidden transition-all duration-300 ease-in-out ${
                   isSearchOpen ? "w-[300px] opacity-100" : "w-0 opacity-0"
@@ -301,7 +278,6 @@ export default function CuisineDetailPage() {
                 />
               </div>
 
-              {/* Search icon button */}
               <button
                 onClick={() => {
                   setIsSearchOpen(!isSearchOpen);
@@ -315,12 +291,11 @@ export default function CuisineDetailPage() {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* ── Main Content ── */}
         <div className="w-[92%] mx-auto pb-16 flex gap-8">
           {/* Sidebar */}
           <aside className="w-[220px] shrink-0">
             <CuisineFilters
-              activeCuisine={activeCuisine}
               onFilterChange={handleFilterChange}
             />
           </aside>
@@ -335,7 +310,9 @@ export default function CuisineDetailPage() {
                   {filteredRestaurants.length}
                 </span>{" "}
                 restaurants in{" "}
-                <span className="text-[#fbbe15] font-semibold">{selectedLocation}</span>
+                <span className="text-[#fbbe15] font-semibold">
+                  {selectedLocation}
+                </span>
               </p>
             </div>
 
@@ -346,7 +323,7 @@ export default function CuisineDetailPage() {
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-5">
-                {paginatedRestaurants.map((restaurant) => (
+                {filteredRestaurants.map((restaurant) => (
                   <div key={restaurant.id}>
                     <BukaCard restaurant={restaurant} />
                   </div>
@@ -358,7 +335,7 @@ export default function CuisineDetailPage() {
             {!isLoading && filteredRestaurants.length === 0 && (
               <div className="flex items-center justify-center py-20">
                 <p className="text-zinc-500 text-sm">
-                  No restaurants found matching your filters.
+                  No restaurants found. Try adjusting your filters or location.
                 </p>
               </div>
             )}
