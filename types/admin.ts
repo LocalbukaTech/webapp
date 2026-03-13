@@ -5,11 +5,14 @@ export type UserStatus = 'Active' | 'Flagged' | 'Banned' | 'Suspended';
 export interface AdminUser {
     id: string;
     userId: string;
-    signUpIp: string;
+    signUpIp?: string;
+    fullName?: string;
     email: string;
-    registrationDate: string;
-    location: string;
-    systemFlagReason: string;
+    createdAt?: string;
+    registrationDate?: string;
+    location?: string;
+    totalPosts?: number;
+    systemFlagReason?: string;
     status: UserStatus;
 }
 

@@ -1,14 +1,18 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { Loader2 } from "lucide-react";
 import { UserTabs } from "@/components/admin/user-management/UserTabs";
 import { UserFilters, EMPTY_FILTERS } from "@/components/admin/user-management/UserFilters";
 import type { DateRange, FilterState } from "@/components/admin/user-management/UserFilters";
 import { UserTable } from "@/components/admin/user-management/UserTable";
 import { RealAccountsTable } from "@/components/admin/user-management/RealAccountsTable";
 import { UserPagination } from "@/components/admin/user-management/UserPagination";
-import { mockRealAccountUsers, mockFakeUsers } from "@/constants/mockUsers";
+import { mockFakeUsers } from "@/constants/mockUsers";
 import type { UserTab } from "@/types/admin";
+import { useUsers } from "@/lib/api/services/users.hooks";
+import { usersService } from "@/lib/api/services/users.service";
+import type { SortColumn, SortDirection } from "@/components/admin/user-management/RealAccountsTable";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -35,48 +39,27 @@ export function UserManagementPage() {
     const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
     const [dateRange, setDateRange] = useState<DateRange | null>(null);
 
+    const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+    // ── API Fetch for Real Accounts ──
+    const { data: realUsersResp, isLoading: isLoadingRealUsers, isFetching: isFetchingRealUsers } = useUsers({
+        page: currentPage,
+        pageSize: ITEMS_PER_PAGE,
+        search: searchQuery || undefined,
+        location: filters.location || undefined,
+        status: filters.status || undefined,
+        dateFrom: dateRange?.from || undefined,
+        dateTo: dateRange?.to || undefined,
+        sortBy: sortColumn || undefined,
+        sortOrder: sortDirection || undefined,
+    });
+
     // ── Data sources (different per tab) ──
-    const allRealUsers = mockRealAccountUsers;
+    const filteredRealUsers = realUsersResp?.data?.data || [];
+    const totalRealUsers = realUsersResp?.data?.total || 0;
+
     const allFakeUsers = mockFakeUsers;
-
-    // ── Combined filtering pipeline for REAL accounts ──
-    const filteredRealUsers = useMemo(() => {
-        if (activeTab !== "real") return [];
-        let result = [...allRealUsers];
-
-        // 1) Search
-        if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            result = result.filter(
-                (u) =>
-                    u.email.toLowerCase().includes(q) ||
-                    u.userId.toLowerCase().includes(q)
-            );
-        }
-
-        // 2) Location filter
-        if (filters.location) {
-            result = result.filter((u) => u.location === filters.location);
-        }
-
-        // 3) Status filter
-        if (filters.status) {
-            result = result.filter((u) => u.status === filters.status);
-        }
-
-        // 4) Date range filter
-        if (dateRange) {
-            const from = new Date(dateRange.from);
-            const to = new Date(dateRange.to);
-            to.setHours(23, 59, 59, 999);
-            result = result.filter((u) => {
-                const d = parseMockDate(u.registrationDate);
-                return d >= from && d <= to;
-            });
-        }
-
-        return result;
-    }, [activeTab, allRealUsers, searchQuery, filters, dateRange]);
 
     // ── Combined filtering pipeline for FAKE/SPAM accounts ──
     const filteredFakeUsers = useMemo(() => {
@@ -88,8 +71,8 @@ export function UserManagementPage() {
             const q = searchQuery.toLowerCase();
             result = result.filter(
                 (u) =>
-                    u.email.toLowerCase().includes(q) ||
-                    u.userId.toLowerCase().includes(q)
+                    (u.email || "").toLowerCase().includes(q) ||
+                    (u.id || "").toLowerCase().includes(q)
             );
         }
 
@@ -114,7 +97,7 @@ export function UserManagementPage() {
             const to = new Date(dateRange.to);
             to.setHours(23, 59, 59, 999);
             result = result.filter((u) => {
-                const d = parseMockDate(u.registrationDate);
+                const d = parseMockDate(u.registrationDate || "");
                 return d >= from && d <= to;
             });
         }
@@ -124,7 +107,7 @@ export function UserManagementPage() {
 
     // ── Derived values based on active tab ──
     const filteredUsers = activeTab === "real" ? filteredRealUsers : filteredFakeUsers;
-    const totalUsers = activeTab === "real" ? allRealUsers.length : allFakeUsers.length;
+    const totalUsers = activeTab === "real" ? totalRealUsers : allFakeUsers.length;
 
     // ── Active filter count ──
     const activeFilterCount = useMemo(() => {
@@ -136,11 +119,9 @@ export function UserManagementPage() {
     }, [filters, activeTab]);
 
     // ── Pagination ──
-    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
+    const totalPages = Math.max(1, Math.ceil(totalUsers / ITEMS_PER_PAGE));
     const safePage = Math.min(currentPage, totalPages);
-    const paginatedRealUsers = activeTab === "real"
-        ? filteredRealUsers.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
-        : [];
+    const paginatedRealUsers = filteredRealUsers; // Pagination is managed server-side
     const paginatedFakeUsers = activeTab === "fake"
         ? filteredFakeUsers.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE)
         : [];
@@ -207,21 +188,34 @@ export function UserManagementPage() {
         setSelectedIds(new Set());
     }, []);
 
-    const handleExport = (format: "csv" | "excel") => {
+    const handleSortChange = useCallback((column: SortColumn, direction: SortDirection) => {
+        setSortColumn(column);
+        setSortDirection(direction);
+    }, []);
+
+    const handleExport = async (format: "csv" | "excel") => {
         if (activeTab === "real") {
-            // Export real accounts
-            const header = "User ID,Email,Registration Date,Location,Total Posts,Status";
-            const rows = filteredRealUsers.map(
-                (u) => `${u.userId},${u.email},${u.registrationDate},${u.location},${u.totalPosts},${u.status}`
-            );
-            const content = [header, ...rows].join("\n");
-            const blob = new Blob([content], { type: format === "csv" ? "text/csv" : "application/vnd.ms-excel" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `real_users_export.${format === "csv" ? "csv" : "xls"}`;
-            link.click();
-            URL.revokeObjectURL(url);
+            try {
+                // Export real accounts by hitting API directly for the blob
+                const blob = await usersService.exportUsers({
+                    search: searchQuery || undefined,
+                    location: filters.location || undefined,
+                    status: filters.status || undefined,
+                    dateFrom: dateRange?.from || undefined,
+                    dateTo: dateRange?.to || undefined,
+                    sortBy: sortColumn || undefined,
+                    sortOrder: sortDirection || undefined,
+                });
+                
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = `real_users_export.${format === "csv" ? "csv" : "xls"}`;
+                link.click();
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("Export failed:", error);
+            }
         } else {
             // Export fake/spam accounts
             const sep = format === "csv" ? "," : "\t";
@@ -275,7 +269,17 @@ export function UserManagementPage() {
                 </div>
 
                 {/* Table — border-only wrapper (no bg, inherits white from parent) */}
-                <div className="mx-6 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="mx-6 border border-gray-200 rounded-lg overflow-hidden relative min-h-[400px]">
+                    {/* Loading Overlay */}
+                    {activeTab === "real" && (isLoadingRealUsers || isFetchingRealUsers) && (
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 border-b border-gray-200">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                                <Loader2 className="w-8 h-8 animate-spin text-[#fbbe15]" />
+                                <span className="text-sm font-medium text-zinc-600">Loading users...</span>
+                            </div>
+                        </div>
+                    )}
+                    
                     {activeTab === "real" ? (
                         <RealAccountsTable
                             users={paginatedRealUsers}
@@ -283,6 +287,9 @@ export function UserManagementPage() {
                             onToggleSelect={handleToggleSelect}
                             onToggleSelectAll={handleToggleSelectAll}
                             allSelected={allSelectedOnPage}
+                            sortColumn={sortColumn}
+                            sortDirection={sortDirection}
+                            onSortChange={handleSortChange}
                         />
                     ) : (
                         <UserTable

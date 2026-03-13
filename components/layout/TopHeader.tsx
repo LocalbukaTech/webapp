@@ -3,17 +3,37 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ArrowLeft, Search, Menu } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TopHeaderProps {
     onMobileMenuOpen?: () => void;
 }
 
 export function TopHeader({ onMobileMenuOpen }: TopHeaderProps) {
+    const { logout } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+
+    const handleLogout = () => {
+        logout();
+        queryClient.clear(); // Clear all cached queries
+        toast({
+            title: "Signed Out",
+            description: "You have been successfully signed out.",
+            variant: "success",
+        });
+        router.push("/");
+    };
+
     const navItems = [
         { label: "Account", href: "/settings/profile", active: true },
         { label: "Password & Security", href: "/settings/security", active: false },
-        { label: "Delete Account", href: null, active: false },
-        { label: "Logout", href: "/logout", active: false },
+        { label: "Delete Account", href: "/settings?tab=delete", active: false },
+        { label: "Logout", href: null, active: false, onClick: handleLogout },
     ];
 
     return (
@@ -29,7 +49,7 @@ export function TopHeader({ onMobileMenuOpen }: TopHeaderProps) {
 
                 <Link
                     href="/dashboard"
-                    className="w-[36px] h-[36px] flex-shrink-0 flex items-center justify-center rounded-full bg-transparent hover:bg-[#252525] transition-colors text-white border-[2px] border-white"
+                    className="w-[36px] h-[36px] shrink-0 flex items-center justify-center rounded-full bg-transparent hover:bg-[#252525] transition-colors text-white border-2 border-white"
                 >
                     <ArrowLeft className="w-5 h-5 text-white" />
                 </Link>
@@ -60,6 +80,7 @@ export function TopHeader({ onMobileMenuOpen }: TopHeaderProps) {
                     ) : (
                         <button
                             key={item.label}
+                            onClick={item.onClick}
                             className={cn(
                                 "text-[16px] font-semibold transition-colors whitespace-nowrap bg-transparent border-none cursor-pointer p-0",
                                 item.label === "Logout" ? "text-white hover:text-gray-200" : "text-[#9CA3AF] hover:text-gray-200"

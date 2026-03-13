@@ -8,232 +8,27 @@ import { CuisineSection } from "@/components/buka/CuisineSection";
 import { Waitlist } from "@/components/buka/Waitlist";
 import { Images } from "@/public/images";
 
-// --- Mock Data ---
+import { useEffect, useMemo } from "react";
+import { useRestaurants, useTrendingRestaurants, useSearchRestaurants } from "@/lib/api";
+import { Restaurant } from "@/lib/api/services/restaurants.service";
+import { CgSpinner } from "react-icons/cg";
+import Link from "next/link";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
-const topRestaurants: BukaRestaurant[] = [
-  {
-    id: "r1",
-    name: "Shiro Lagos",
-    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "r2",
-    name: "Wakame Restaurant",
-    image: "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "r3",
-    name: "Ekaabo Restaurant",
-    image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "r4",
-    name: "Yellow Chilli",
-    image: "https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=600&q=80",
-    rating: 4.3,
-    reviewCount: 15,
-    address: "27 Joel Ogunnaike Street, GRA Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "r5",
-    name: "Nkoyo Restaurant",
-    image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=600&q=80",
-    rating: 4.7,
-    reviewCount: 32,
-    address: "5 Admiralty Way, Lekki Phase 1, Lagos.",
-    tags: ["Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "r6",
-    name: "Terra Kulture",
-    image: "https://images.unsplash.com/photo-1550966871-3ed3cdb51f73?w=600&q=80",
-    rating: 4.6,
-    reviewCount: 28,
-    address: "Plot 1376 Tiamiyu Savage, Victoria Island.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-];
-
-const topBukas: BukaRestaurant[] = [
-  {
-    id: "b1",
-    name: "Bukka Hut",
-    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "b2",
-    name: "Wakame Restaurant",
-    image: "https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "b3",
-    name: "Chophouse Bistro and Grills",
-    image: "https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "b4",
-    name: "Mama Cass Restaurant",
-    image: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=600&q=80",
-    rating: 4.2,
-    reviewCount: 18,
-    address: "22 Opebi Road, Ikeja, Lagos.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "b5",
-    name: "Iya Oyo Buka",
-    image: "https://images.unsplash.com/photo-1428515613728-6b4607e44363?w=600&q=80",
-    rating: 4.8,
-    reviewCount: 40,
-    address: "8 Allen Avenue, Ikeja, Lagos.",
-    tags: ["Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "b6",
-    name: "Calabar Kitchen",
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=80",
-    rating: 4.4,
-    reviewCount: 22,
-    address: "12 Awolowo Road, Ikoyi, Lagos.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-];
-
-const hiddenGems: BukaRestaurant[] = [
-  {
-    id: "h1",
-    name: "Shiro Lagos",
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "h2",
-    name: "Wakame Restaurant",
-    image: "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "h3",
-    name: "Teecas Amala Express",
-    image: "https://images.unsplash.com/photo-1567521464027-f127ff144326?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "h4",
-    name: "Olaiya Foods",
-    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80",
-    rating: 4.9,
-    reviewCount: 50,
-    address: "3 Bode Thomas Street, Surulere, Lagos.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "h5",
-    name: "Amala Skye",
-    image: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600&q=80",
-    rating: 4.6,
-    reviewCount: 35,
-    address: "14 Admiralty Road, Lekki, Lagos.",
-    tags: ["Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "h6",
-    name: "White House Restaurant",
-    image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80",
-    rating: 4.3,
-    reviewCount: 19,
-    address: "1 Kingsway Road, Ikoyi, Lagos.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-];
+// Helper to map API restaurant to BukaRestaurant UI interface
+const mapToBukaRestaurant = (res: Restaurant): BukaRestaurant => ({
+  id: res.id || res.googlePlaceId || Math.random().toString(),
+  name: res.name || "Unknown Restaurant",
+  image: res.photos && res.photos.length > 0 ? res.photos[0] : "",
+  rating: res.avgRating || res.googleRating || 0,
+  reviewCount: res.reviewCount || 0,
+  address: res.address || "No address provided",
+  tags: [res.cuisine, res.source === 'google' ? 'Google' : 'Local'].filter(Boolean) as string[],
+  hygiene: 5.0,
+  affordability: 5.0,
+  foodQuality: 5.0,
+  rawRestaurant: res,
+});
 
 // Cuisine Data
 const cuisines = [
@@ -245,86 +40,53 @@ const cuisines = [
   { name: "Edo Cuisine", image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80" },
 ];
 
-// Street Favorites Data
-const streetFavorites: BukaRestaurant[] = [
-  {
-    id: "s1",
-    name: "Shiro Lagos",
-    image: "https://images.unsplash.com/photo-1555992336-fb0d29498b13?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "s2",
-    name: "Wakame Restaurant",
-    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "s3",
-    name: "Ekaabo Restaurant",
-    image: "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=600&q=80",
-    rating: 4.5,
-    reviewCount: 20,
-    address: "15/17 Majekodunmi Street, Omotayo Street, Ikeja.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "s4",
-    name: "Mama Cass",
-    image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80",
-    rating: 4.7,
-    reviewCount: 25,
-    address: "22 Opebi Road, Ikeja, Lagos.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "s5",
-    name: "Amala Zone",
-    image: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=600&q=80",
-    rating: 4.8,
-    reviewCount: 38,
-    address: "3 Bode Thomas Street, Surulere.",
-    tags: ["Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-  {
-    id: "s6",
-    name: "Suya Spot",
-    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&q=80",
-    rating: 4.4,
-    reviewCount: 30,
-    address: "1 Allen Avenue, Ikeja, Lagos.",
-    tags: ["Female Owned", "Nigeria Cuisine"],
-    hygiene: 5.0,
-    affordability: 5.0,
-    foodQuality: 5.0,
-  },
-];
-
-// --- Page ---
-
 export default function BukaPage() {
   const router = useRouter();
+  const { lat, lng, loading: loadingGeo } = useGeolocation();
+
+  // Fetch from the API
+  const { data: restaurantsData, isLoading: isLoadingAll } = useRestaurants({ page: 1, pageSize: 20 });
+  const { data: trendingData, isLoading: isLoadingTrending } = useTrendingRestaurants();
+  // Fetch Google fallback for user location
+  const { data: fallbackData, isLoading: isLoadingFallback } = useSearchRestaurants({ 
+    lat: lat || 6.5244, 
+    lng: lng || 3.3792, 
+    page: 1, 
+    pageSize: 20 
+  }, !loadingGeo);
+
+  // Map the API responses to the UI models
+  const allUiRestaurants = useMemo(() => {
+    return restaurantsData?.data?.map(mapToBukaRestaurant) || [];
+  }, [restaurantsData]);
+
+  const searchUiRestaurants = useMemo(() => {
+    return fallbackData?.data?.map(mapToBukaRestaurant) || [];
+  }, [fallbackData]);
+
+  const trendingUiRestaurants = useMemo(() => {
+    const rawData = trendingData as unknown as { data?: Restaurant[] } | Restaurant[];
+    const arrayData = Array.isArray(rawData) ? rawData : rawData?.data;
+    return Array.isArray(arrayData) ? arrayData.map(mapToBukaRestaurant) : [];
+  }, [trendingData]);
+
+  // We can populate the different UI categories by distributing the dynamic data:
+  // Combine ALL and Fallback into a unified list, removing duplicates by ID
+  const combinedAll = useMemo(() => {
+    const combined = [...allUiRestaurants, ...searchUiRestaurants];
+    const uniqueMap = new Map();
+    combined.forEach(r => {
+      if (!uniqueMap.has(r.id)) uniqueMap.set(r.id, r);
+    });
+    return Array.from(uniqueMap.values());
+  }, [allUiRestaurants, searchUiRestaurants]);
+
+  const topRestaurants = trendingUiRestaurants.length > 0 ? trendingUiRestaurants.slice(0, 5) : combinedAll.slice(0, 5);
+  const topBukas = combinedAll.slice(5, 10);
+  const hiddenGems = combinedAll.slice(10, 16);
+  const streetFavorites = trendingUiRestaurants.length > 5 ? trendingUiRestaurants.slice(5) : combinedAll.slice(0, 6);
+
+  const isLoading = isLoadingAll || isLoadingTrending || isLoadingFallback;
 
   return (
     <div className="w-full min-h-screen bg-[#1a1a1a]">
@@ -360,17 +122,25 @@ export default function BukaPage() {
               <br />
               your next plate is right here.
             </p>
-            <button className="w-fit px-10 py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none">
+            <Link href="/buka/restaurant" className="w-fit px-10 py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none">
               Explore Restaurants
-            </button>
+            </Link>
           </div>
         </section>
 
         {/* Categories Sections */}
         <div className="flex flex-col gap-16 px-8 py-16">
-          <BukaCategory title="Top 5 Restaurant" restaurants={topRestaurants} />
-          <BukaCategory title="Top 5 Buka's" restaurants={topBukas} />
-          <BukaCategory title="Hidden Gem's" restaurants={hiddenGems} />
+          {isLoading ? (
+            <div className="flex items-center justify-center p-20">
+              <CgSpinner className="animate-spin text-[#fbbe15] text-4xl" />
+            </div>
+          ) : (
+            <>
+              {topRestaurants.length > 0 && <BukaCategory title="Top 5 Restaurant" restaurants={topRestaurants} />}
+              {topBukas.length > 0 && <BukaCategory title="Top 5 Buka's" restaurants={topBukas} />}
+              {hiddenGems.length > 0 && <BukaCategory title="Hidden Gem's" restaurants={hiddenGems} />}
+            </>
+          )}
         </div>
 
         {/* By Cuisine Section */}
@@ -391,7 +161,9 @@ export default function BukaPage() {
 
         {/* Street Favorites Section */}
         <div className="px-8 pb-16">
-          <BukaCategory title="Street Favorites" restaurants={streetFavorites} />
+          {!isLoading && streetFavorites.length > 0 && (
+            <BukaCategory title="Street Favorites" restaurants={streetFavorites} />
+          )}
         </div>
         {/* WaitList Section */}
         <div className="px-8 pb-16">

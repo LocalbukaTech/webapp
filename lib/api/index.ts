@@ -31,3 +31,7 @@ export * from './services/blog.hooks';
 // Users domain (Admin)
 export * from './services/users.service';
 export * from './services/users.hooks';
+
+// Restaurants domain
+export * from './services/restaurants.service';
+export * from './services/restaurants.hooks';

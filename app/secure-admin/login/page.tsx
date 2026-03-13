@@ -3,24 +3,46 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useToast } from "@/hooks/use-toast";
+import { useLoginMutation } from "@/lib/api";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function AdminLogin() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  const {toast} = useToast();
+  const loginMutation = useLoginMutation();
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
 
-    // Dummy login: just delay and redirect
-    setTimeout(() => {
-      setLoading(false);
-      router.push("/secure-admin/user-management");
-    }, 1000);
+    loginMutation.mutate(
+      {
+        email: credentials.email,
+        password: credentials.password,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Welcome back! 👋',
+            description: 'You have successfully signed in.',
+          });
+          router.push('/secure-admin/dashboard');
+        },
+        onError: (err: any) => {
+          const message =
+            err?.response?.data?.message ||
+            'Invalid email or password. Please try again.';
+          setError(message);
+        },
+      }
+    );
   };
 
   return (
@@ -45,15 +67,22 @@ export default function AdminLogin() {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+              <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm'>
+                {error}
+              </div>
+            )}
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-1">
               Email Address
             </label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={credentials.email}
+                onChange={(e) =>
+                  setCredentials({...credentials, email: e.target.value})
+                }
               required
               className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#fbbe15] transition-colors"
               placeholder="admin@localbuka.com"
@@ -65,10 +94,13 @@ export default function AdminLogin() {
             </label>
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                  type={showPassword ? 'text' : 'password'}
+                  id='password'
+                  required
+                  value={credentials.password}
+                  onChange={(e) =>
+                    setCredentials({...credentials, password: e.target.value})
+                  }
                 className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 pr-10 text-white focus:outline-none focus:border-[#fbbe15] transition-colors"
                 placeholder="••••••••"
               />
@@ -78,33 +110,27 @@ export default function AdminLogin() {
                 onClick={() => setShowPassword(!showPassword)}
                 title={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
-                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
-                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
-                    <line x1="2" y1="2" x2="22" y2="22"></line>
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                )}
+                 {showPassword ? (
+                    <EyeOff className='w-5 h-5' />
+                  ) : (
+                    <Eye className='w-5 h-5' />
+                  )}
               </button>
             </div>
           </div>
           <button
             type="submit"
-            disabled={loading}
+           disabled={loginMutation.isPending}
             className="w-full bg-[#fbbe15] text-[#1a1a1a] font-bold rounded-lg px-4 py-3 mt-4 hover:bg-[#e6ad00] transition-colors disabled:opacity-70 flex justify-center items-center"
           >
-            {loading ? (
-              <svg className="animate-spin h-5 w-5 text-[#1a1a1a]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : "Login to Dashboard"}
+              {loginMutation.isPending ? (
+                <>
+                  <Loader2 className='w-5 h-5 animate-spin' />
+                  Signing in...
+                </>
+              ) : (
+                'Login to Dashboard'
+              )}
           </button>
         </form>
       </div>

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Camera, Eye, EyeOff } from "lucide-react";
+import { Camera, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMe, useUpdateMe, useDeleteMe, useChangePassword } from "@/lib/api/services/auth.hooks";
+import { useAuth } from "@/context/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AccountInformationProps {
   activeSubTab: string;
@@ -54,11 +57,30 @@ export function AccountInformation({ activeSubTab, onSubTabChange }: AccountInfo
 
 function AccountTab() {
   const { toast } = useToast();
-  const [firstName, setFirstName] = useState("James");
-  const [lastName, setLastName] = useState("Ade");
-  const email = "jamesgreat@gmail.com";
+  const { user } = useAuth();
+  const { data: meResponse, isLoading } = useMe();
+  const updateMeMutation = useUpdateMe();
+
+  const meData = (meResponse as any)?.data?.data || (meResponse as any)?.data || null;
+  const apiUser = meData || user;
+
+  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [avatarSrc, setAvatarSrc] = useState("/images/Image2.png");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Populate
+  useEffect(() => {
+    if (apiUser) {
+      setFullName(apiUser.fullName || "");
+      setUsername(apiUser.username || "");
+      setEmail(apiUser.email || "");
+      if (apiUser.image_url || apiUser.avatar) {
+        setAvatarSrc(apiUser.image_url || apiUser.avatar);
+      }
+    }
+  }, [apiUser?.fullName, apiUser?.email]);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -69,25 +91,42 @@ function AccountTab() {
     if (file) {
       const url = URL.createObjectURL(file);
       setAvatarSrc(url);
-      toast({
-        title: "Photo Updated",
-        description: "Your profile photo has been changed.",
-        variant: "success",
-      });
     }
   };
 
   const handleSave = () => {
-    toast({
-      title: "Account Updated",
-      description: "Your account information has been saved successfully.",
-      variant: "success",
-    });
+    updateMeMutation.mutate(
+      { fullName, username },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Account Updated",
+            description: "Your account information has been saved successfully.",
+            variant: "success",
+          });
+        },
+        onError: (err: any) => {
+          toast({
+            title: "Update Failed",
+            description: err?.response?.data?.message || "Unable to update account. Please try again.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-40">
+        <Loader2 className="w-5 h-5 animate-spin text-[#fbbe15]" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5 max-w-lg">
-      {/* Avatar with file picker */}
+      {/* Avatar */}
       <div className="relative w-20 h-20">
         <Image
           src={avatarSrc}
@@ -111,25 +150,26 @@ function AccountTab() {
         />
       </div>
 
-      {/* First Name */}
+      {/* Full Name */}
       <div className="relative">
-        <label className="absolute top-2 left-3 text-[11px] text-zinc-500">First Name</label>
+        <label className="absolute top-2 left-3 text-[11px] text-zinc-500">Full Name</label>
         <input
           type="text"
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
           className="w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors"
         />
       </div>
 
-      {/* Last Name */}
+      {/* Username */}
       <div className="relative">
-        <label className="absolute top-2 left-3 text-[11px] text-zinc-500">Last Name</label>
+        <label className="absolute top-2 left-3 text-[11px] text-zinc-500">Username</label>
         <input
           type="text"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          className="w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Choose a username"
+          className="w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600"
         />
       </div>
 
@@ -147,9 +187,11 @@ function AccountTab() {
       <div className="flex justify-end mt-6">
         <button
           onClick={handleSave}
-          className="px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-semibold text-sm rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none"
+          disabled={updateMeMutation.isPending}
+          className="px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-semibold text-sm rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          Save
+          {updateMeMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+          {updateMeMutation.isPending ? "Saving..." : "Save"}
         </button>
       </div>
     </div>
@@ -158,31 +200,24 @@ function AccountTab() {
 
 function PasswordTab() {
   const { toast } = useToast();
-  const [newPassword, setNewPassword] = useState("password");
-  const [confirmPassword, setConfirmPassword] = useState("password");
+  const changePasswordMutation = useChangePassword();
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [avatarSrc, setAvatarSrc] = useState("/images/Image2.png");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAvatarSrc(url);
-      toast({
-        title: "Photo Updated",
-        description: "Your profile photo has been changed.",
-        variant: "success",
-      });
-    }
-  };
 
   const handleSave = () => {
+    if (!currentPassword) {
+      toast({
+        title: "Current Password Required",
+        description: "Please enter your current password.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (newPassword !== confirmPassword) {
       toast({
         title: "Passwords Don't Match",
@@ -191,37 +226,57 @@ function PasswordTab() {
       });
       return;
     }
-    toast({
-      title: "Password Updated",
-      description: "Your password has been changed successfully.",
-      variant: "success",
-    });
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Your new password must be at least 6 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    changePasswordMutation.mutate(
+      { currentPassword, newPassword },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Password Updated",
+            description: "Your password has been changed successfully.",
+            variant: "success",
+          });
+          setCurrentPassword("");
+          setNewPassword("");
+          setConfirmPassword("");
+        },
+        onError: (err: any) => {
+          toast({
+            title: "Password Change Failed",
+            description: err?.response?.data?.message || "Unable to change password. Please check your current password and try again.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   return (
     <div className="flex flex-col gap-5 max-w-lg">
-      {/* Avatar with file picker */}
-      <div className="relative w-20 h-20">
-        <Image
-          src={avatarSrc}
-          alt="Profile"
-          width={80}
-          height={80}
-          className="w-20 h-20 rounded-lg object-cover"
+      {/* Current Password */}
+      <div className="relative">
+        <label className="absolute top-2 left-3 text-[11px] text-zinc-500 z-10">Current Password</label>
+        <input
+          type={showCurrent ? "text" : "password"}
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          placeholder="Enter current password"
+          className="w-full pt-6 pb-2 px-3 pr-10 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600"
         />
         <button
-          onClick={handleAvatarClick}
-          className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/20 flex items-center justify-center cursor-pointer"
+          onClick={() => setShowCurrent(!showCurrent)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 cursor-pointer bg-transparent border-0"
         >
-          <Camera size={14} className="text-zinc-400" />
+          {showCurrent ? <Eye size={18} /> : <EyeOff size={18} />}
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
       </div>
 
       {/* New Password */}
@@ -231,11 +286,12 @@ function PasswordTab() {
           type={showNew ? "text" : "password"}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          className="w-full pt-6 pb-2 px-3 pr-10 bg-white border border-[#FBBE15]/50 rounded-lg text-[#1a1a1a] text-sm focus:outline-none focus:border-[#FBBE15] transition-colors"
+          placeholder="Enter new password"
+          className="w-full pt-6 pb-2 px-3 pr-10 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600"
         />
         <button
           onClick={() => setShowNew(!showNew)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 cursor-pointer bg-transparent border-0"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 cursor-pointer bg-transparent border-0"
         >
           {showNew ? <Eye size={18} /> : <EyeOff size={18} />}
         </button>
@@ -248,11 +304,12 @@ function PasswordTab() {
           type={showConfirm ? "text" : "password"}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="w-full pt-6 pb-2 px-3 pr-10 bg-white border border-[#FBBE15]/50 rounded-lg text-[#1a1a1a] text-sm focus:outline-none focus:border-[#FBBE15] transition-colors"
+          placeholder="Re-enter new password"
+          className="w-full pt-6 pb-2 px-3 pr-10 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600"
         />
         <button
           onClick={() => setShowConfirm(!showConfirm)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 cursor-pointer bg-transparent border-0"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 cursor-pointer bg-transparent border-0"
         >
           {showConfirm ? <Eye size={18} /> : <EyeOff size={18} />}
         </button>
@@ -262,9 +319,11 @@ function PasswordTab() {
       <div className="flex justify-end mt-6">
         <button
           onClick={handleSave}
-          className="px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-semibold text-sm rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none"
+          disabled={changePasswordMutation.isPending}
+          className="px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-semibold text-sm rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          Save
+          {changePasswordMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+          {changePasswordMutation.isPending ? "Updating..." : "Save"}
         </button>
       </div>
     </div>
@@ -274,18 +333,35 @@ function PasswordTab() {
 function DeleteTab() {
   const { toast } = useToast();
   const router = useRouter();
+  const { logout } = useAuth();
+  const deleteMeMutation = useDeleteMe();
+  const queryClient = useQueryClient();
   const [showDialog, setShowDialog] = useState(false);
 
   const handleDelete = () => {
-    setShowDialog(false);
-    toast({
-      title: "Account Deleted",
-      description: "Your account has been permanently deleted.",
-      variant: "destructive",
+    deleteMeMutation.mutate(undefined, {
+      onSuccess: () => {
+        setShowDialog(false);
+        toast({
+          title: "Account Deleted",
+          description: "Your account has been permanently deleted.",
+          variant: "destructive",
+        });
+        logout();
+        queryClient.clear();
+        setTimeout(() => {
+          router.push("/");
+        }, 1500);
+      },
+      onError: (err: any) => {
+        setShowDialog(false);
+        toast({
+          title: "Deletion Failed",
+          description: err?.response?.data?.message || "Unable to delete account. Please try again.",
+          variant: "destructive",
+        });
+      },
     });
-    setTimeout(() => {
-      router.push("/");
-    }, 2000);
   };
 
   return (
@@ -317,15 +393,18 @@ function DeleteTab() {
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDialog(false)}
+                disabled={deleteMeMutation.isPending}
                 className="px-6 py-2.5 bg-transparent border border-white/20 text-white text-sm font-medium rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-6 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors cursor-pointer border-none"
+                disabled={deleteMeMutation.isPending}
+                className="px-6 py-2.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors cursor-pointer border-none disabled:opacity-50 flex items-center gap-2"
               >
-                Yes, Delete
+                {deleteMeMutation.isPending && <Loader2 size={14} className="animate-spin" />}
+                {deleteMeMutation.isPending ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
           </div>
@@ -338,10 +417,14 @@ function DeleteTab() {
 function LogoutTab() {
   const { toast } = useToast();
   const router = useRouter();
+  const { logout } = useAuth();
+  const queryClient = useQueryClient();
   const [showDialog, setShowDialog] = useState(false);
 
   const handleSignOut = () => {
     setShowDialog(false);
+    logout();
+    queryClient.clear();
     toast({
       title: "Signed Out",
       description: "You have been successfully signed out.",
@@ -349,7 +432,7 @@ function LogoutTab() {
     });
     setTimeout(() => {
       router.push("/");
-    }, 2000);
+    }, 1000);
   };
 
   return (

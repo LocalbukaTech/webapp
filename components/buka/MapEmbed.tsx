@@ -63,11 +63,16 @@ interface MapEmbedProps {
   destinationLat: number;
   destinationLng: number;
   showRoute: boolean;
+  address?: string; // Add optional address for geocode fallback
 }
 
-export function MapEmbed({ destinationLat, destinationLng, showRoute }: MapEmbedProps) {
+export function MapEmbed({ destinationLat, destinationLng, showRoute, address }: MapEmbedProps) {
   const [mounted, setMounted] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  
+  // Actual destination coordinates to use (handles fallback -> geocode)
+  const [activeDestination, setActiveDestination] = useState<[number, number]>([destinationLat, destinationLng]);
+  
   const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -128,13 +133,49 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute }: MapEmbed
     return () => navigator.geolocation.clearWatch(watchId);
   }, [showRoute]);
 
+  // ---- Geocode destination address if coordinates are the generic fallback ----
+  useEffect(() => {
+    // If we have an address and the coordinates match the exact hardcoded fallback (6.5244, 3.3792)
+    if (address && destinationLat === 6.5244 && destinationLng === 3.3792) {
+      const geocode = async () => {
+        try {
+          // Clean Nigerian addresses for Nominatim (e.g. "20/17 Majekodunmi St, Omotayo St" -> "Majekodunmi St, Lagos")
+          const cleanNigerianAddress = (addr: string) => {
+            let cleaned = addr.replace(/^(no\.?\s*|plot\s*|block\s*|blk\s*)?[0-9a-zA-Z/-]+\s*/i, "");
+            cleaned = cleaned.split(",")[0].trim();
+            if (!cleaned.toLowerCase().includes("lagos")) {
+              cleaned += ", Lagos";
+            }
+            return cleaned;
+          };
+
+          const searchQuery = cleanNigerianAddress(address);
+          
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
+          );
+          const data = await res.json();
+          if (data && data.length > 0) {
+            setActiveDestination([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+          }
+        } catch (err) {
+          console.error("Geocoding fallback failed", err);
+        }
+      };
+      geocode();
+    } else {
+      setActiveDestination([destinationLat, destinationLng]);
+    }
+  }, [address, destinationLat, destinationLng]);
+
   // ---- Reverse geocode destination once ----
   useEffect(() => {
     if (!destinationAddress && showRoute) {
       (async () => {
         try {
+          const [destLat, destLng] = activeDestination;
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${destinationLat}&lon=${destinationLng}`
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${destLat}&lon=${destLng}`
           );
           const data = await res.json();
           if (data?.address) {
@@ -164,9 +205,10 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute }: MapEmbed
       setIsLoadingRoute(true);
       try {
         const [userLat, userLng] = userLocation;
+        const [destLat, destLng] = activeDestination;
         // Request steps=true for turn-by-turn instructions
         const response = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destinationLng},${destinationLat}?geometries=geojson&overview=full&steps=true`
+          `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?geometries=geojson&overview=full&steps=true`
         );
         const data = await response.json();
 
@@ -248,7 +290,7 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute }: MapEmbed
     };
 
     fetchRoute();
-  }, [userLocation, destinationLat, destinationLng, showRoute]);
+  }, [userLocation, activeDestination, showRoute]);
 
   // ---- Speak utility with natural human voice ----
   const speak = useCallback((text: string) => {
@@ -367,7 +409,7 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute }: MapEmbed
     );
   }
 
-  const destination: [number, number] = [destinationLat, destinationLng];
+  const destination: [number, number] = activeDestination;
 
   return (
     <>
